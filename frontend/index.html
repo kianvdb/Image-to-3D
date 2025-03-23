@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+</head>
+<body>
+    <h1>3D Model Generator</h1>
+    <input type="file" id="imageInput" />
+    <button onclick="generateModel()">Generate Model</button>
+    
+    <!-- Progress bar voor modelgeneratie -->
+    <progress id="progressBar" value="0" max="100" style="width: 100%;"></progress>
+
+    <!-- Div voor 3D-model weergave -->
+    <div id="viewer" style="width: 600px; height: 400px;"></div>
+    <script type="module">
+        import { generateModel } from "./js/main.js";  
+        window.generateModel = generateModel;  
+    </script>
+    
+</body>
+</html>
