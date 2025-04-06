@@ -1,3 +1,5 @@
+// js/main.js
+
 import { createModel, getModelStatus } from "./api.js";
 
 let scene, camera, renderer, controls, directionalLight, ambientLight;
@@ -99,7 +101,6 @@ function startModelStatusPolling(taskId) {
 
             if (data.status === "GENERATING") {
                 const percentage = data.progress || 0;
-                console.log(`📈 Voortgang: ${percentage}%`);
                 window.updateProgressBar?.(percentage);
             }
 
@@ -118,51 +119,57 @@ function startModelStatusPolling(taskId) {
     }, 5000);
 }
 
-// 🏗️ Model inladen in de 3D-scene via fetch en proxy
-function loadModel(modelUrl) {
+// 🏗️ Laadmodel met meerdere fallback CORS proxies
+async function fetchModelBlob(modelUrl) {
+    const proxies = [
+        'https://api.allorigins.win/raw?url=',
+        'https://thingproxy.freeboard.io/fetch/'
+    ];
+
+    for (const proxy of proxies) {
+        const finalUrl = proxy + encodeURIComponent(modelUrl);
+        try {
+            const response = await fetch(finalUrl);
+            if (!response.ok) throw new Error(`Proxy ${proxy} gaf geen OK`);
+            return await response.blob();
+        } catch (err) {
+            console.warn(`❌ Proxy ${proxy} faalde:`, err.message);
+        }
+    }
+
+    throw new Error("🚫 Alle CORS-proxies zijn gefaald.");
+}
+
+// 🎯 Model inladen in Three.js scene
+async function loadModel(modelUrl) {
     console.log("📥 Laden van model via URL:", modelUrl);
 
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-    const finalUrl = proxyUrl + modelUrl;
+    try {
+        const blob = await fetchModelBlob(modelUrl);
+        const url = URL.createObjectURL(blob);
 
-    fetch(finalUrl)
-        .then(response => {
-            console.log("🧾 Response headers:", response.headers);
-            console.log("📦 Content-Type:", response.headers.get("content-type"));
+        const loader = new THREE.GLTFLoader();
+        loader.load(url, function (gltf) {
+            console.log("✅ Model geladen!");
 
-            if (!response.ok) {
-                throw new Error('Netwerkfout bij het ophalen van model');
-            }
-            return response.blob();
-        })
-        .then(blob => {
-            const url = URL.createObjectURL(blob);
-            console.log("🔗 Blob-URL aangemaakt:", url);
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(url, function (gltf) {
-                console.log("✅ Model geladen!");
-
-                // Oude modellen verwijderen (behalve grid en lichten)
-                scene.children = scene.children.filter((child) => {
-                    if (child instanceof THREE.Group) {
-                        scene.remove(child);
-                        return false;
-                    }
-                    return true;
-                });
-
-                scene.add(gltf.scene);
-                console.log("📌 Model toegevoegd aan de scene.");
-            }, 
-            function (xhr) {
-                console.log(`📦 Laadvoortgang: ${(xhr.loaded / xhr.total * 100).toFixed(2)}%`);
-            }, 
-            function (error) {
-                console.error("❌ Fout bij laden van model:", error);
+            // Oude modellen verwijderen (behalve grid en lichten)
+            scene.children = scene.children.filter((child) => {
+                if (child instanceof THREE.Group) {
+                    scene.remove(child);
+                    return false;
+                }
+                return true;
             });
-        })
-        .catch(error => {
-            console.error("❌ Er is een fout opgetreden bij het ophalen van het model:", error);
+
+            scene.add(gltf.scene);
+            console.log("📌 Model toegevoegd aan de scene.");
+        }, undefined, function (error) {
+            console.error("❌ Fout bij laden van model:", error);
         });
+    } catch (error) {
+        console.error("❌ Kon model niet laden:", error);
+    }
 }
+
+// Initieel starten
+initScene();
