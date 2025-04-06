@@ -16,7 +16,6 @@ const createModel = async (imageBase64) => {
   }
 };
 
-
 // 📌 Functie om de modelstatus op te halen van de backend
 const getModelStatus = async (taskId) => {
     try {
@@ -32,4 +31,17 @@ const getModelStatus = async (taskId) => {
     }
 };
 
-export { createModel, getModelStatus };
+// 📌 Functie om het GLB-modelbestand op te halen via de proxy endpoint
+const fetchModelBlob = async (taskId) => {
+    try {
+        const response = await axios.get(`${proxyUrl}/api/proxyModel/${taskId}`, {
+            responseType: 'blob'
+        });
+        return response.data;
+    } catch (error) {
+        console.error("❌ Fout bij ophalen van GLB model via proxy:", error);
+        throw error;
+    }
+};
+
+export { createModel, getModelStatus, fetchModelBlob };
