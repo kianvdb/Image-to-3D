@@ -1,18 +1,30 @@
+// Declareer variabelen voor de 3D-scène
 let scene, camera, renderer, model;
 
 // Initialiseer de 3D-scene
 const init3DScene = () => {
-  // Set up the scene, camera, and renderer
+  // Set up de scene, camera, en renderer
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
   renderer = new THREE.WebGLRenderer();
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById('3dCanvas').appendChild(renderer.domElement);
 
-  // Voeg een eenvoudig grid toe aan de scene
+  // Voeg een grid toe aan de scene en zet het onder het model
   const gridHelper = new THREE.GridHelper(10, 10);
+  gridHelper.position.y = -1;  // Zet het grid 1 eenheid onder het model
   scene.add(gridHelper);
 
+  // Voeg verlichting toe aan de scene met lagere intensiteit
+  const light = new THREE.DirectionalLight(0xffffff, 0.5);  // Verlaag de intensiteit
+  light.position.set(10, 10, 10);  // Zet de lichtbron op een geschikte positie
+  scene.add(light);
+
+  // Voeg ambient light toe voor zachte verlichting
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Zachte verlichting
+  scene.add(ambientLight);
+
+  // Zet de camera op een geschikte positie
   camera.position.z = 5;
 };
 
@@ -46,8 +58,8 @@ const loadModelFromBackend = async (taskId) => {
 const animate = () => {
   requestAnimationFrame(animate);
   if (model) {
-    model.rotation.x += 0.01;
-    model.rotation.y += 0.01;
+    model.rotation.x += 0.01;  // Rotate het model om de x-as
+    model.rotation.y += 0.01;  // Rotate het model om de y-as
   }
   renderer.render(scene, camera);
 };

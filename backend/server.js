@@ -17,7 +17,7 @@ app.use(cors(corsOptions));
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-const YOUR_API_KEY = 'msy_dgO5o6R6IKwwBbWYWrerMkUC4iMJSZPHPMYI';
+const YOUR_API_KEY = 'msy_dummy_api_key_for_test_mode_12345678';
 
 // Functie om een model te genereren op basis van een afbeelding
 const createModel = async (imageBase64) => {

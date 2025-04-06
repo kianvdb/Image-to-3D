@@ -1,5 +1,3 @@
-// js/main.js
-
 import { createModel, getModelStatus } from "./api.js";
 
 let scene, camera, renderer, controls, directionalLight, ambientLight;
@@ -27,16 +25,20 @@ function initScene() {
     viewer.appendChild(renderer.domElement);
     console.log("✅ Renderer toegevoegd aan de viewer.");
 
-    directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    // Voeg verlichting toe aan de scene met lagere intensiteit
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);  // Verlaag de intensiteit
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
     console.log("✅ Directional Light toegevoegd.");
 
-    ambientLight = new THREE.AmbientLight(0x404040, 2);
+    // Voeg ambient light toe voor zachte verlichting
+    ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Zachte verlichting
     scene.add(ambientLight);
     console.log("✅ Ambient Light toegevoegd.");
 
+    // Voeg het grid toe onder het model
     const gridHelper = new THREE.GridHelper(10, 10, 0xffffff, 0x888888);
+    gridHelper.position.y = -1;  // Zet het grid 1 eenheid onder het model
     scene.add(gridHelper);
     console.log("✅ GridHelper toegevoegd.");
 
