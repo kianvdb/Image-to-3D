@@ -1,5 +1,6 @@
 let scene, camera, renderer, model;
 
+// Initialiseer de 3D-scene
 const init3DScene = () => {
   // Set up the scene, camera, and renderer
   scene = new THREE.Scene();
@@ -8,13 +9,14 @@ const init3DScene = () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById('3dCanvas').appendChild(renderer.domElement);
 
-  // Add a simple grid to the scene
+  // Voeg een eenvoudig grid toe aan de scene
   const gridHelper = new THREE.GridHelper(10, 10);
   scene.add(gridHelper);
 
   camera.position.z = 5;
 };
 
+// Laad een GLB-model in de scene
 const loadGLBModel = (url) => {
   const loader = new THREE.GLTFLoader();
   loader.load(url, (gltf) => {
@@ -24,6 +26,23 @@ const loadGLBModel = (url) => {
   });
 };
 
+// Laad het model nadat het via de backend is opgehaald
+const loadModelFromBackend = async (taskId) => {
+  try {
+    // Verkrijg het model-bestand als een Blob via de proxy
+    const blob = await fetchModelBlob(taskId);
+    
+    // Zet de Blob om naar een URL die we kunnen gebruiken in de loader
+    const url = URL.createObjectURL(blob);
+    
+    // Laad het model in de Three.js scène
+    loadGLBModel(url);
+  } catch (error) {
+    console.error("Fout bij het laden van model via backend:", error);
+  }
+};
+
+// Start de animatie van het model
 const animate = () => {
   requestAnimationFrame(animate);
   if (model) {
@@ -35,3 +54,7 @@ const animate = () => {
 
 // Initialiseer de 3D-scene
 init3DScene();
+
+// Wacht tot de taskId beschikbaar is en laad het model
+const taskId = 'je_task_id_hier';  // Vervang dit met de werkelijke taskId
+loadModelFromBackend(taskId);
