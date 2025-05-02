@@ -2,15 +2,15 @@ import { createModel, getModelStatus } from "./api.js";
 
 let scene, camera, renderer, controls, directionalLight, ambientLight;
 let modelLoaded = false;
+let currentModelUrls = {};
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("📌 DOM geladen, initialiseer Three.js...");
     initScene();
+    initDownloadButtons();
 });
 
 function initScene() {
-    console.log("🚀 Initialiseren van de Three.js scene...");
-
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
     renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -23,24 +23,17 @@ function initScene() {
     }
     viewer.innerHTML = "";
     viewer.appendChild(renderer.domElement);
-    console.log("✅ Renderer toegevoegd aan de viewer.");
 
-    // Voeg verlichting toe aan de scene met lagere intensiteit
-    directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);  // Verlaag de intensiteit
+    directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
     directionalLight.position.set(5, 5, 5);
     scene.add(directionalLight);
-    console.log("✅ Directional Light toegevoegd.");
 
-    // Voeg ambient light toe voor zachte verlichting
-    ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Zachte verlichting
+    ambientLight = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(ambientLight);
-    console.log("✅ Ambient Light toegevoegd.");
 
-    // Voeg het grid toe onder het model
     const gridHelper = new THREE.GridHelper(10, 10, 0xffffff, 0x888888);
-    gridHelper.position.y = -1;  // Zet het grid 1 eenheid onder het model
+    gridHelper.position.y = -1;
     scene.add(gridHelper);
-    console.log("✅ GridHelper toegevoegd.");
 
     controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
@@ -50,7 +43,6 @@ function initScene() {
 
     camera.position.set(0, 3, 5);
     camera.lookAt(0, 0, 0);
-    console.log("✅ Camera ingesteld.");
 
     function animate() {
         requestAnimationFrame(animate);
@@ -58,19 +50,31 @@ function initScene() {
         renderer.render(scene, camera);
     }
     animate();
-    console.log("🎥 Animatie gestart.");
 }
 
-// 🌟 Functie om een model te genereren via de API
-export async function generateModel() {
-    console.log("🎨 Model genereren gestart...");
+function initDownloadButtons() {
+    document.getElementById("downloadGLB").addEventListener("click", () => {
+        if (!modelLoaded || !currentModelUrls.glb) return alert("⏳ Het model is nog niet klaar.");
+        downloadFile(currentModelUrls.glb, "model.glb");
+    });
 
+    document.getElementById("downloadOBJ").addEventListener("click", () => {
+        if (!modelLoaded || !currentModelUrls.obj) return alert("⏳ Het model is nog niet klaar of .obj niet beschikbaar.");
+        downloadFile(currentModelUrls.obj, "model.obj");
+    });
+
+    document.getElementById("downloadFBX").addEventListener("click", () => {
+        if (!modelLoaded || !currentModelUrls.fbx) return alert("⏳ Het model is nog niet klaar of .fbx niet beschikbaar.");
+        downloadFile(currentModelUrls.fbx, "model.fbx");
+    });
+}
+
+export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const imageFile = imageInput?.files[0];
 
     if (!imageFile) {
         alert("Selecteer een afbeelding!");
-        console.log("❌ Geen afbeelding geselecteerd.");
         return;
     }
 
@@ -78,7 +82,6 @@ export async function generateModel() {
         const taskId = await createModel(imageFile);
         if (taskId) {
             alert("Model generatie gestart! Task ID: " + taskId);
-            console.log("✅ Model generatie gestart, task ID:", taskId);
             startModelStatusPolling(taskId);
         }
     } catch (error) {
@@ -86,34 +89,25 @@ export async function generateModel() {
     }
 }
 
-// 📡 Functie om periodiek de status van het model op te halen
 function startModelStatusPolling(taskId) {
     const intervalId = setInterval(async () => {
-        console.log("🔄 Controleren van de modelstatus...");
-
         if (modelLoaded) {
-            console.log("✅ Model al geladen, polling gestopt.");
             clearInterval(intervalId);
             return;
         }
 
         try {
             const data = await getModelStatus(taskId);
-            console.log("📊 Status update ontvangen:", data);
-
             if (data.status === "GENERATING") {
                 const percentage = data.progress || 0;
                 window.updateProgressBar?.(percentage);
             }
 
             if (data.status === "SUCCEEDED" && data.model_urls?.glb) {
-                alert("🎉 Model is klaar!");
-                console.log("✅ Model klaar om te laden.");
                 clearInterval(intervalId);
-                loadModel(data.model_urls.glb);
+                currentModelUrls = data.model_urls;
+                loadModel(currentModelUrls.glb);
                 modelLoaded = true;
-            } else {
-                console.log("⏳ Model wordt nog gegenereerd...");
             }
         } catch (error) {
             console.error("❌ Fout bij ophalen van modelstatus:", error);
@@ -121,7 +115,6 @@ function startModelStatusPolling(taskId) {
     }, 5000);
 }
 
-// 🏗️ Laadmodel met meerdere fallback CORS proxies
 async function fetchModelBlob(modelUrl) {
     const proxies = [
         'https://api.allorigins.win/raw?url=',
@@ -142,7 +135,6 @@ async function fetchModelBlob(modelUrl) {
     throw new Error("🚫 Alle CORS-proxies zijn gefaald.");
 }
 
-// 🎯 Model inladen in Three.js scene
 async function loadModel(modelUrl) {
     console.log("📥 Laden van model via URL:", modelUrl);
 
@@ -154,7 +146,6 @@ async function loadModel(modelUrl) {
         loader.load(url, function (gltf) {
             console.log("✅ Model geladen!");
 
-            // Oude modellen verwijderen (behalve grid en lichten)
             scene.children = scene.children.filter((child) => {
                 if (child instanceof THREE.Group) {
                     scene.remove(child);
@@ -164,7 +155,6 @@ async function loadModel(modelUrl) {
             });
 
             scene.add(gltf.scene);
-            console.log("📌 Model toegevoegd aan de scene.");
         }, undefined, function (error) {
             console.error("❌ Fout bij laden van model:", error);
         });
@@ -173,5 +163,11 @@ async function loadModel(modelUrl) {
     }
 }
 
-// Initieel starten
-initScene();
+function downloadFile(url, filename) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}

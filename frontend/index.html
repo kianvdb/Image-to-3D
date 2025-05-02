@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -13,18 +13,20 @@
     <h1>3D Model Generator</h1>
     <input type="file" id="imageInput" />
     <button onclick="generateModel()">Generate Model</button>
-    
-    <!-- Progress bar voor modelgeneratie -->
-    <progress id="progressBar" value="0" max="100" style="width: 100%;"></progress>
 
-    <!-- Div voor 3D-model weergave -->
+    <div style="margin: 15px 0;">
+        <button id="downloadGLB">Download .glb</button>
+        <button id="downloadOBJ">Download .obj</button>
+        <button id="downloadFBX">Download .fbx</button>
+    </div>
+
+    <progress id="progressBar" value="0" max="100" style="width: 100%;"></progress>
     <div id="viewer" style="width: 600px; height: 400px;"></div>
 
     <script type="module">
         import { generateModel } from "./js/main.js";  
         window.generateModel = generateModel;  
 
-        // Update progress bar op basis van de modelstatus
         window.updateProgressBar = function(percentage) {
             const progressBar = document.getElementById('progressBar');
             if (progressBar) {
