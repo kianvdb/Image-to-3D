@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 const proxyUrl = "http://localhost:3000"; // Proxyserver om CORS-problemen te vermijden
 
 // 📌 Functie om een model aan te maken via de backend

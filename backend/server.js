@@ -8,10 +8,11 @@ const app = express();
 const port = 3000;
 
 const corsOptions = {
-  origin: ['http://localhost:3001', 'http://127.0.0.1:5500'],
+  origin: ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5500'],
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
+
 app.use(cors(corsOptions));
 
 const storage = multer.memoryStorage();
@@ -31,6 +32,7 @@ const createModel = async (imageBase64) => {
     enable_pbr: false,
     should_texture: true,
     symmetry_mode: 'auto',
+    prompt: "dog"
   };
 
   try {
