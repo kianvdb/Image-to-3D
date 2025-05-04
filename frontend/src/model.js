@@ -1,3 +1,6 @@
+// Import GLTFLoader als dat nog niet gedaan is
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
 // Declareer variabelen voor de 3D-scène
 let scene, camera, renderer, model;
 
@@ -30,12 +33,20 @@ const init3DScene = () => {
 
 // Laad een GLB-model in de scene
 const loadGLBModel = (url) => {
-  const loader = new THREE.GLTFLoader();
-  loader.load(url, (gltf) => {
-    model = gltf.scene;
-    scene.add(model);
-    animate();
-  });
+  const loader = new GLTFLoader();
+  loader.load(
+    url,
+    (gltf) => {
+      model = gltf.scene;
+      model.position.set(0, 0, 0); // Zet het model in het midden van de scène
+      scene.add(model);
+      animate();
+    },
+    undefined, // Optionele functie voor voortgang
+    (error) => { // Foutafhandelingsfunctie
+      console.error('Er is een fout opgetreden bij het laden van het model:', error);
+    }
+  );
 };
 
 // Laad het model nadat het via de backend is opgehaald
@@ -43,10 +54,14 @@ const loadModelFromBackend = async (taskId) => {
   try {
     // Verkrijg het model-bestand als een Blob via de proxy
     const blob = await fetchModelBlob(taskId);
-    
+
+    // Log de Blob om te controleren of deze daadwerkelijk gegevens bevat
+    console.log(blob);  // Verifiëren of de Blob gegevens bevat
+
     // Zet de Blob om naar een URL die we kunnen gebruiken in de loader
     const url = URL.createObjectURL(blob);
-    
+    console.log(url);  // Log de URL om te controleren
+
     // Laad het model in de Three.js scène
     loadGLBModel(url);
   } catch (error) {

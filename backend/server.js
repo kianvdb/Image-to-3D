@@ -2,13 +2,19 @@ const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
 const axios = require('axios');
-const path = require('path');
-
 const app = express();
 const port = 3000;
 
+// ✅ CORS-configuratie
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5500'],
+  origin: (origin, callback) => {
+    const allowedOrigins = ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5500'];
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS not allowed'), false);
+    }
+  },
   methods: ['GET', 'POST'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };
@@ -16,13 +22,13 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 const storage = multer.memoryStorage();
-const upload = multer({ storage: storage });
+const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
 const YOUR_API_KEY = 'msy_dummy_api_key_for_test_mode_12345678';
+const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
 
-// Functie om een model te genereren op basis van een afbeelding
-const createModel = async (imageBase64) => {
-  const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
+// ▶️ Stap 1: Start preview
+const createPreviewTask = async (imageBase64) => {
   const payload = {
     image_url: imageBase64,
     ai_model: 'meshy-4',
@@ -36,129 +42,142 @@ const createModel = async (imageBase64) => {
   };
 
   try {
-    console.log("Sending request to Meshy API...");
     const response = await axios.post(
       'https://api.meshy.ai/openapi/v1/image-to-3d',
       payload,
-      { headers }
+      {
+        headers: {
+          ...headers,
+          'Content-Type': 'application/json'
+        }
+      }
     );
 
-    console.log('Meshy API Response:', response.data);
-    return response.data.result; // Returns the taskId
-  } catch (error) {
-    if (error.response) {
-      console.error('Error creating model:', error.response.data);
+    console.log('📨 Antwoord van Meshy (preview):', JSON.stringify(response.data, null, 2));
+
+    // ✅ Fix voor testmode string-response
+    if (typeof response.data.result === 'string') {
+      return response.data.result;
+    } else if (response.data?.result?.task_id) {
+      return response.data.result.task_id;
     } else {
-      console.error('Error creating model:', error.message);
+      throw new Error('Geen geldig preview-resultaat ontvangen');
     }
-    throw error;
+
+  } catch (error) {
+    console.error('❌ Meshy API fout (preview):', error.response?.data || error.message);
+    throw new Error('Preview-task aanmaken mislukt');
   }
 };
 
-// Functie om de status van een model op te halen op basis van taskId
-const getModelStatus = async (taskId) => {
-  const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
+// 🔁 Stap 2: Poll preview
+const pollPreview = async (taskId) => {
+  let attempts = 0;
+  const maxAttempts = 20;
 
-  try {
-    console.log(`Checking status for taskId: ${taskId}`);
-    const response = await axios.get(
-      `https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}`,
-      { headers }
-    );
-    console.log('Model status response:', response.data);
-    return response.data;
-  } catch (error) {
-    if (error.response) {
-      console.error('Error retrieving model status:', error.response.data);
-    } else {
-      console.error('Error retrieving model status:', error.message);
+  while (attempts < maxAttempts) {
+    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}`, { headers });
+    const status = res.data?.status;
+
+    console.log(`⏳ Preview status poging ${attempts + 1}:`, status);
+
+    if (status === 'SUCCEEDED') {
+      return taskId;
+    } else if (status === 'FAILED') {
+      throw new Error('Preview task is mislukt');
     }
-    throw error;
+
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    attempts++;
+  }
+
+  throw new Error('Preview polling timeout');
+};
+
+// 🛠️ Stap 3: Start refine
+const startRefineTask = async (previewTaskId) => {
+  console.log('🔄 Start refine-task voor preview ID:', previewTaskId);
+
+  const refineUrl = `https://api.meshy.ai/openapi/v1/image-to-3d/refine/${previewTaskId}`;
+  console.log('🔗 Refine URL:', refineUrl);  // 🚨 Log refine URL
+
+  const payload = {
+    preview_task_id: previewTaskId
+  };
+
+  const response = await axios.post(
+    refineUrl,
+    payload,
+    { headers }
+  );
+
+  console.log('📨 Antwoord van Meshy (refine):', JSON.stringify(response.data, null, 2));
+
+  if (typeof response.data.result === 'string') {
+    return response.data.result;
+  } else if (response.data?.result?.task_id) {
+    return response.data.result.task_id;
+  } else {
+    throw new Error('Geen refine taskId ontvangen');
   }
 };
 
-// Endpoint voor het genereren van een model
+// 🔁 Stap 4: Poll refine
+const pollRefine = async (taskId) => {
+  let attempts = 0;
+  const maxAttempts = 20;
+
+  while (attempts < maxAttempts) {
+    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/refine/${taskId}`, { headers });
+    const status = res.data?.status;
+
+    console.log(`⏳ Refine status poging ${attempts + 1}:`, status);
+
+    if (status === 'SUCCEEDED') {
+      return res.data;
+    } else if (status === 'FAILED') {
+      throw new Error('Refine task is mislukt');
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    attempts++;
+  }
+
+  throw new Error('Refine polling timeout');
+};
+
+// 🌐 Endpoint: Genereer model
 app.post('/api/generateModel', upload.single('image'), async (req, res) => {
-  console.log('Received a request to generate model...');
   try {
-    if (!req.file) {
-      console.error('No file uploaded.');
-      return res.status(400).send('No file uploaded.');
-    }
+    if (!req.file) return res.status(400).send('Geen bestand geüpload.');
 
     const imageBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-    console.log('Image received, converting to base64...');
+    console.log('🖼️ imageBase64 lengte:', imageBase64.length);
 
-    const taskId = await createModel(imageBase64);
-    console.log(`Model generation started with taskId: ${taskId}`);
-    res.json({ taskId });
+    console.log('🔄 Start preview-task...');
+    const previewTaskId = await createPreviewTask(imageBase64);
+    console.log('🟢 Preview task ID:', previewTaskId);
+
+    await pollPreview(previewTaskId);
+    console.log('✅ Preview klaar, refine wordt gestart...');
+
+    const refineTaskId = await startRefineTask(previewTaskId);
+    console.log('🔄 Refine gestart met ID:', refineTaskId);
+
+    const refineResult = await pollRefine(refineTaskId);
+    console.log('✅ Refine klaar, model gereed');
+
+    res.json({ taskId: refineTaskId, modelUrls: refineResult.model_urls });
+
   } catch (error) {
-    console.error('Error during model generation:', error);
-    res.status(500).send('Error generating model.');
+    console.error('❌ Fout tijdens preview/refine:', error.message);
+    res.status(500).send('Fout bij preview/refine polling');
   }
 });
 
-// Endpoint voor het ophalen van de modelstatus
-app.get('/api/getModel/:taskId', async (req, res) => {
-  const { taskId } = req.params;
-  console.log(`Received status request for taskId: ${taskId}`);
-
-  try {
-    const modelStatus = await getModelStatus(taskId);
-    console.log(`Model status for taskId ${taskId}:`, modelStatus);
-    res.json(modelStatus);
-  } catch (error) {
-    console.error('Error during status retrieval:', error);
-    res.status(500).send('Error retrieving model status.');
-  }
-});
-
-// Proxy endpoint om het model via een proxy op te halen
-app.get('/api/proxyModel/:taskId', async (req, res) => {
-  const { taskId } = req.params;
-  const modelUrl = `https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}/model`;
-
-  console.log(`📌 Proxy fetching model from: ${modelUrl}`);
-
-  try {
-    // Eerst de status van het model ophalen
-    const modelStatus = await getModelStatus(taskId);
-    console.log(`🔄 Model status voor taskId ${taskId}:`, modelStatus);
-
-    // Controleer de status van het model
-    if (modelStatus.status !== 'SUCCEEDED') {
-      console.error(`❌ Model is niet gereed voor taskId: ${taskId}. Huidige status: ${modelStatus.status}`);
-      return res.status(400).send(`Model is niet klaar, huidige status: ${modelStatus.status}`);
-    }
-
-    // Model ophalen als het gereed is
-    const response = await axios.get(modelUrl, { responseType: 'arraybuffer' });
-    console.log("✅ Model succesvol opgehaald via proxy.");
-
-    res.set('Content-Type', 'model/gltf-binary');
-    res.send(response.data);
-  } catch (error) {
-    // Controleer of de fout een buffer is en log het als string
-    if (error.response) {
-      if (Buffer.isBuffer(error.response.data)) {
-        const errorMessage = error.response.data.toString('utf-8');
-        console.error('❌ Error fetching model (buffer):', errorMessage);
-      } else {
-        console.error('❌ Error fetching model:', error.response.data);
-      }
-    } else if (error.request) {
-      console.error('❌ No response received from Meshy API:', error.message);
-    } else {
-      console.error('❌ Error in the proxy logic:', error.message);
-    }
-
-    res.status(500).send('Error fetching model');
-  }
-});
-
-// Serve the frontend files (e.g., index.html, etc.)
+// 📂 Serveer frontend
 app.use(express.static('frontend'));
 
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+  console.log(`🚀 Server draait op http://localhost:${port}`);
 });

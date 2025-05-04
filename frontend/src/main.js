@@ -1,3 +1,4 @@
+// src/main.js
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
@@ -6,8 +7,8 @@ import { createModel, getModelStatus } from './api.js';
 
 let scene, camera, renderer, controls;
 let modelLoaded = false;
-let currentModelUrls = {};
-let model;
+let currentTaskId;
+let model; // COCO-SSD model
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
@@ -19,11 +20,15 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.log("✅ COCO-SSD geladen");
     } catch (err) {
         console.error("❌ COCO-SSD laadfout:", err);
+        alert("Fout bij laden van objectdetectie-model.");
     }
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
 
+/**
+ * Initialiseert de Three.js scene met camera, belichting, grid en orbit controls.
+ */
 function initScene() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
@@ -54,91 +59,132 @@ function initScene() {
     animate();
 }
 
+/**
+ * Initialiseert de downloadknoppen.
+ */
 function initDownloadButtons() {
     document.getElementById("downloadGLB").onclick = () => {
-        if (!modelLoaded || !currentModelUrls.glb) return alert("Model nog niet klaar");
-        downloadFile(currentModelUrls.glb, "model.glb");
-    };
-
-    document.getElementById("downloadOBJ").onclick = () => {
-        if (!modelLoaded || !currentModelUrls.obj) return alert("OBJ niet beschikbaar");
-        downloadFile(currentModelUrls.obj, "model.obj");
-    };
-
-    document.getElementById("downloadFBX").onclick = () => {
-        if (!modelLoaded || !currentModelUrls.fbx) return alert("FBX niet beschikbaar");
-        downloadFile(currentModelUrls.fbx, "model.fbx");
+        if (!modelLoaded || !currentTaskId) {
+            alert("Model is nog niet klaar voor download.");
+            return;
+        }
+        const downloadUrl = `/api/proxyModel/${currentTaskId}`;
+        downloadFile(downloadUrl, "model.glb");
     };
 }
 
+/**
+ * Start de modelgeneratie: objectdetectie + backend API-call.
+ */
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
-    if (!file) return alert("Selecteer een afbeelding");
+    if (!file) return alert("Selecteer een afbeelding.");
 
     const img = new Image();
     img.src = URL.createObjectURL(file);
 
     img.onload = async () => {
-        console.log("Afbeelding geladen:", img);  // Log afbeelding die wordt geladen
+        console.log("Afbeelding geladen:", img);
 
         try {
-            // Detecteer objecten in de afbeelding
             const predictions = await model.detect(img);
-            console.log("Herkenning:", predictions);  // Log alle gedetecteerde objecten
+            console.log("Herkenning:", predictions);
 
-            // Zoek naar de hond in de gedetecteerde objecten
             const dogDetected = predictions.some(p => p.class === "dog");
-            console.log("Hond gedetecteerd:", dogDetected);  // Log de detectie van een hond
+            console.log("Hond gedetecteerd:", dogDetected);
 
             if (!dogDetected) {
-                console.warn("⚠️ Geen hond gedetecteerd!", predictions);  // Log gedetecteerde objecten
-                return alert("Geen hond gedetecteerd!");  // Waarschuw de gebruiker als er geen hond is gedetecteerd
+                alert("⚠️ Geen hond gedetecteerd!");
+                return;
             }
 
-            alert("Hond gevonden! Start genereren...");
+            alert("🐶 Hond gevonden! Modelgeneratie gestart...");
             const taskId = await createModel(file);
-            if (taskId) startPolling(taskId);
+            if (taskId) {
+                currentTaskId = taskId;
+                startPolling(taskId);
+            }
         } catch (err) {
-            console.error("❌ Fout bij objectdetectie:", err);  // Log fout bij detectie
+            console.error("❌ Fout bij objectdetectie:", err);
+            alert("Fout bij objectdetectie.");
         }
+    };
+
+    img.onerror = () => {
+        alert("Fout bij laden van afbeelding.");
     };
 }
 
+/**
+ * Pollt periodiek de backend tot het model klaar is.
+ */
 function startPolling(taskId) {
     const interval = setInterval(async () => {
         try {
             const res = await getModelStatus(taskId);
-            if (res.status === "SUCCEEDED" && res.model_urls?.glb) {
+            console.log(`📡 Polling taskId ${taskId}:`, res);
+
+            if (!res) {
+                console.error("❌ Lege response ontvangen.");
+                return;
+            }
+
+            // Status verwerken
+            if (res.status === "SUCCEEDED") {
                 clearInterval(interval);
-                currentModelUrls = res.model_urls;
-                loadModel(currentModelUrls.glb);
+                await loadModel(`/api/proxyModel/${taskId}`);
                 modelLoaded = true;
+                alert("✅ Model succesvol geladen!");
             }
 
             if (res.progress !== undefined) {
                 document.getElementById("progressBar").value = res.progress;
             }
+
+            if (res.status === "FAILED" || res.status === "ERROR") {
+                clearInterval(interval);
+                alert("❌ Modelgeneratie mislukt.");
+            }
         } catch (e) {
-            console.error("Poll error:", e);
+            console.error("❌ Pollingfout:", e);
         }
-    }, 5000);
+    }, 5000); // Elke 5 seconden pollen
 }
 
+/**
+ * Laadt en toont het gegenereerde GLB-model in de Three.js scene.
+ */
 async function loadModel(url) {
     try {
+        const response = await fetch(url);
+
+        const contentType = response.headers.get("Content-Type");
+        if (!response.ok || !contentType?.includes("model/gltf-binary")) {
+            const errorText = await response.text();
+            console.error("❌ Geen geldig model:", errorText);
+            throw new Error("Geen geldig GLB-model ontvangen.");
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
         const loader = new GLTFLoader();
-        const blob = await (await fetch(url)).blob();
-        const objectURL = URL.createObjectURL(blob);
-        loader.load(objectURL, (gltf) => {
+
+        loader.parse(arrayBuffer, '', (gltf) => {
+            // Verwijder vorige modellen
             scene.children = scene.children.filter(obj => !(obj instanceof THREE.Group));
             scene.add(gltf.scene);
+        }, (err) => {
+            console.error("❌ GLTF parsing fout:", err);
         });
     } catch (e) {
-        console.error("Model laadfout:", e);
+        console.error("❌ Model laadfout:", e);
+        alert("Kon model niet laden.");
     }
 }
 
+/**
+ * Start een download van een bestand via een onzichtbare link.
+ */
 function downloadFile(url, name) {
     const a = document.createElement("a");
     a.href = url;
