@@ -1,4 +1,4 @@
-const express = require('express');
+const express = require('express'); 
 const cors = require('cors');
 const multer = require('multer');
 const axios = require('axios');
@@ -38,12 +38,12 @@ const createPreviewTask = async (imageBase64) => {
     enable_pbr: false,
     should_texture: true,
     symmetry_mode: 'auto',
-    prompt: "dog"
+    prompt: "dog"  // Dit kan later door de gebruiker worden aangepast
   };
 
   try {
     const response = await axios.post(
-      'https://api.meshy.ai/openapi/v1/image-to-3d',
+      'https://api.meshy.ai/openapi/v1/image-to-3d', // Correcte versie voor de preview endpoint
       payload,
       {
         headers: {
@@ -76,7 +76,7 @@ const pollPreview = async (taskId) => {
   const maxAttempts = 20;
 
   while (attempts < maxAttempts) {
-    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}`, { headers });
+    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}`, { headers }); // Correcte versie voor de preview polling
     const status = res.data?.status;
 
     console.log(`⏳ Preview status poging ${attempts + 1}:`, status);
@@ -98,27 +98,32 @@ const pollPreview = async (taskId) => {
 const startRefineTask = async (previewTaskId) => {
   console.log('🔄 Start refine-task voor preview ID:', previewTaskId);
 
-  const refineUrl = `https://api.meshy.ai/openapi/v1/image-to-3d/refine/${previewTaskId}`;
+  const refineUrl = `https://api.meshy.ai/openapi/v1/image-to-3d/refine`; // Correcte versie voor refine
   console.log('🔗 Refine URL:', refineUrl);  // 🚨 Log refine URL
 
   const payload = {
     preview_task_id: previewTaskId
   };
 
-  const response = await axios.post(
-    refineUrl,
-    payload,
-    { headers }
-  );
+  try {
+    const response = await axios.post(
+      refineUrl,
+      payload,
+      { headers }
+    );
 
-  console.log('📨 Antwoord van Meshy (refine):', JSON.stringify(response.data, null, 2));
+    console.log('📨 Antwoord van Meshy (refine):', JSON.stringify(response.data, null, 2));
 
-  if (typeof response.data.result === 'string') {
-    return response.data.result;
-  } else if (response.data?.result?.task_id) {
-    return response.data.result.task_id;
-  } else {
-    throw new Error('Geen refine taskId ontvangen');
+    if (typeof response.data.result === 'string') {
+      return response.data.result;
+    } else if (response.data?.result?.task_id) {
+      return response.data.result.task_id;
+    } else {
+      throw new Error('Geen refine taskId ontvangen');
+    }
+  } catch (error) {
+    console.error('❌ Fout bij refine-aanroep:', error.response?.data || error.message);
+    throw new Error('Fout bij starten refine task');
   }
 };
 
@@ -128,7 +133,7 @@ const pollRefine = async (taskId) => {
   const maxAttempts = 20;
 
   while (attempts < maxAttempts) {
-    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/refine/${taskId}`, { headers });
+    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/refine/${taskId}`, { headers }); // Correcte versie voor refine polling
     const status = res.data?.status;
 
     console.log(`⏳ Refine status poging ${attempts + 1}:`, status);
