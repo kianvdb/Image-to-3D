@@ -24,7 +24,7 @@ app.use(cors(corsOptions));
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage, limits: { fileSize: 10 * 1024 * 1024 } });
 
-const YOUR_API_KEY = 'msy_dummy_api_key_for_test_mode_12345678';
+const YOUR_API_KEY = 'msy_dgO5o6R6IKwwBbWYWrerMkUC4iMJSZPHPMYI';
 const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
 
 // ▶️ Stap 1: Start preview
