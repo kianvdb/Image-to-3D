@@ -73,13 +73,26 @@ const createPreviewTask = async (imageBase64) => {
 // 🔁 Stap 2: Poll preview
 const pollPreview = async (taskId) => {
   let attempts = 0;
-  const maxAttempts = 20;
+  const maxAttempts = 100;
 
   while (attempts < maxAttempts) {
     const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}`, { headers }); // Correcte versie voor de preview polling
     const status = res.data?.status;
 
     console.log(`⏳ Preview status poging ${attempts + 1}:`, status);
+    console.log(status);
+
+    // Verzend de voortgang naar de frontend
+    if (status) {
+      const progress = {
+        taskId,
+        status
+      };
+      // Deze voortgang zou je ook naar de frontend kunnen sturen
+      app.get(`/api/progress/${taskId}`, (req, res) => {
+        res.json(progress);
+      });
+    }
 
     if (status === 'SUCCEEDED') {
       return taskId;
@@ -87,7 +100,7 @@ const pollPreview = async (taskId) => {
       throw new Error('Preview task is mislukt');
     }
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 5000));  // Wacht 5 seconden voor de volgende poging
     attempts++;
   }
 
@@ -98,17 +111,13 @@ const pollPreview = async (taskId) => {
 const startRefineTask = async (previewTaskId) => {
   console.log('🔄 Start refine-task voor preview ID:', previewTaskId);
 
-  const refineUrl = `https://api.meshy.ai/openapi/v1/image-to-3d/refine`; // Correcte versie voor refine
-  console.log('🔗 Refine URL:', refineUrl);  // 🚨 Log refine URL
-
-  const payload = {
-    preview_task_id: previewTaskId
-  };
+  const refineUrl = `https://api.meshy.ai/openapi/v1/image-to-3d/refine`;
+  console.log('🔗 Refine URL:', refineUrl);
 
   try {
     const response = await axios.post(
       refineUrl,
-      payload,
+      null, // 🔑 Geen payload hier
       { headers }
     );
 
@@ -127,16 +136,29 @@ const startRefineTask = async (previewTaskId) => {
   }
 };
 
+
 // 🔁 Stap 4: Poll refine
 const pollRefine = async (taskId) => {
   let attempts = 0;
-  const maxAttempts = 20;
+  const maxAttempts = 100;
 
   while (attempts < maxAttempts) {
-    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/refine/${taskId}`, { headers }); // Correcte versie voor refine polling
+    const res = await axios.get(`https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}`, { headers }); // Correcte versie voor refine polling
     const status = res.data?.status;
 
-    console.log(`⏳ Refine status poging ${attempts + 1}:`, status);
+    console.log(`⏳ Refine status poging ${attempts + 1}:`, status, progress);
+
+    // Verzend de voortgang naar de frontend
+    if (status) {
+      const progress = {
+        taskId,
+        status
+      };
+      // Deze voortgang zou je ook naar de frontend kunnen sturen
+      app.get(`/api/progress/${taskId}`, (req, res) => {
+        res.json(progress);
+      });
+    }
 
     if (status === 'SUCCEEDED') {
       return res.data;
@@ -144,7 +166,7 @@ const pollRefine = async (taskId) => {
       throw new Error('Refine task is mislukt');
     }
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 5000));  // Wacht 5 seconden voor de volgende poging
     attempts++;
   }
 
@@ -172,6 +194,7 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
     const refineResult = await pollRefine(refineTaskId);
     console.log('✅ Refine klaar, model gereed');
 
+    // Verzenden van status naar frontend via een API (optioneel)
     res.json({ taskId: refineTaskId, modelUrls: refineResult.model_urls });
 
   } catch (error) {

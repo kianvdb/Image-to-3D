@@ -26,9 +26,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
 
-/**
- * Initialiseert de Three.js scene met camera, belichting, grid en orbit controls.
- */
 function initScene() {
     scene = new THREE.Scene();
     camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
@@ -59,9 +56,6 @@ function initScene() {
     animate();
 }
 
-/**
- * Initialiseert de downloadknoppen.
- */
 function initDownloadButtons() {
     document.getElementById("downloadGLB").onclick = () => {
         if (!modelLoaded || !currentTaskId) {
@@ -73,9 +67,6 @@ function initDownloadButtons() {
     };
 }
 
-/**
- * Start de modelgeneratie: objectdetectie + backend API-call.
- */
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
@@ -116,9 +107,6 @@ export async function generateModel() {
     };
 }
 
-/**
- * Pollt periodiek de backend tot het model klaar is.
- */
 function startPolling(taskId) {
     const interval = setInterval(async () => {
         try {
@@ -130,7 +118,6 @@ function startPolling(taskId) {
                 return;
             }
 
-            // Status verwerken
             if (res.status === "SUCCEEDED") {
                 clearInterval(interval);
                 await loadModel(`/api/proxyModel/${taskId}`);
@@ -149,12 +136,9 @@ function startPolling(taskId) {
         } catch (e) {
             console.error("❌ Pollingfout:", e);
         }
-    }, 5000); // Elke 5 seconden pollen
+    }, 5000);
 }
 
-/**
- * Laadt en toont het gegenereerde GLB-model in de Three.js scene.
- */
 async function loadModel(url) {
     try {
         const response = await fetch(url);
@@ -170,7 +154,6 @@ async function loadModel(url) {
         const loader = new GLTFLoader();
 
         loader.parse(arrayBuffer, '', (gltf) => {
-            // Verwijder vorige modellen
             scene.children = scene.children.filter(obj => !(obj instanceof THREE.Group));
             scene.add(gltf.scene);
         }, (err) => {
@@ -182,9 +165,6 @@ async function loadModel(url) {
     }
 }
 
-/**
- * Start een download van een bestand via een onzichtbare link.
- */
 function downloadFile(url, name) {
     const a = document.createElement("a");
     a.href = url;
