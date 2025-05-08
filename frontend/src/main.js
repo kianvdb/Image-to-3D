@@ -1,14 +1,11 @@
-// src/main.js
 import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createModel, getModelStatus } from './api.js';
 
-let scene, camera, renderer, controls;
-let modelLoaded = false;
+let scene, camera, renderer, controls, model;
 let currentTaskId;
-let model; // COCO-SSD model
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
@@ -57,14 +54,30 @@ function initScene() {
 }
 
 function initDownloadButtons() {
-    document.getElementById("downloadGLB").onclick = () => {
-        if (!modelLoaded || !currentTaskId) {
-            alert("Model is nog niet klaar voor download.");
-            return;
-        }
-        const downloadUrl = `/api/proxyModel/${currentTaskId}`;
-        downloadFile(downloadUrl, "model.glb");
-    };
+    const formats = ['GLB', 'USDZ', 'OBJ', 'FBX'];
+
+    formats.forEach(format => {
+        const btn = document.getElementById(`download${format}`);
+        if (!btn) return;
+
+        btn.onclick = () => {
+            if (!currentTaskId) {
+                alert("Geen model taskId beschikbaar.");
+                return;
+            }
+
+            // In plaats van modelLoaded, controleer de status van de taskId
+            getModelStatus(currentTaskId).then(res => {
+                if (res.status !== "SUCCEEDED") {
+                    alert(`Model is nog niet klaar voor download als ${format}.`);
+                } else {
+                    downloadModel(format.toLowerCase());
+                }
+            }).catch(err => {
+                alert("Er is een fout opgetreden bij het ophalen van de modelstatus.");
+            });
+        };
+    });
 }
 
 export async function generateModel() {
@@ -120,9 +133,12 @@ function startPolling(taskId) {
 
             if (res.status === "SUCCEEDED") {
                 clearInterval(interval);
-                await loadModel(`/api/proxyModel/${taskId}`);
-                modelLoaded = true;
-                alert("✅ Model succesvol geladen!");
+                const success = await loadModel(`/api/proxyModel/${taskId}?format=glb`);
+                if (success) {
+                    alert("✅ Model succesvol geladen!");
+                } else {
+                    alert("❌ Kon model niet laden.");
+                }
             }
 
             if (res.progress !== undefined) {
@@ -142,27 +158,37 @@ function startPolling(taskId) {
 async function loadModel(url) {
     try {
         const response = await fetch(url);
-
         const contentType = response.headers.get("Content-Type");
+
         if (!response.ok || !contentType?.includes("model/gltf-binary")) {
             const errorText = await response.text();
             console.error("❌ Geen geldig model:", errorText);
-            throw new Error("Geen geldig GLB-model ontvangen.");
+            return false;
         }
 
         const arrayBuffer = await response.arrayBuffer();
         const loader = new GLTFLoader();
 
-        loader.parse(arrayBuffer, '', (gltf) => {
-            scene.children = scene.children.filter(obj => !(obj instanceof THREE.Group));
-            scene.add(gltf.scene);
-        }, (err) => {
-            console.error("❌ GLTF parsing fout:", err);
+        return new Promise((resolve) => {
+            loader.parse(arrayBuffer, '', (gltf) => {
+                scene.children = scene.children.filter(obj => !(obj instanceof THREE.Group));
+                scene.add(gltf.scene);
+                resolve(true);
+            }, (err) => {
+                console.error("❌ GLTF parsing fout:", err);
+                resolve(false);
+            });
         });
     } catch (e) {
         console.error("❌ Model laadfout:", e);
-        alert("Kon model niet laden.");
+        return false;
     }
+}
+
+function downloadModel(format = 'glb') {
+    const downloadUrl = `/api/proxyModel/${currentTaskId}?format=${format}`;
+    const filename = `model.${format}`;
+    downloadFile(downloadUrl, filename);
 }
 
 function downloadFile(url, name) {

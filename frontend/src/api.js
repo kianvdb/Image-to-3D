@@ -35,7 +35,7 @@ const createModel = async (imageFile) => {
  */
 const getModelStatus = async (taskId) => {
   try {
-    const response = await axios.get(`${proxyUrl}/api/proxyModel/${taskId}`);
+    const response = await axios.get(`${proxyUrl}/api/getModel/${taskId}`); // Aangepast naar getModel i.p.v. proxyModel
 
     if (!response.data?.status) {
       throw new Error(`❌ Geen geldige status ontvangen voor taskId ${taskId}`);

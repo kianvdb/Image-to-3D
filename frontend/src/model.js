@@ -1,34 +1,44 @@
-// Import GLTFLoader als dat nog niet gedaan is
+// Import GLTFLoader
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
-// Declareer variabelen voor de 3D-scène
 let scene, camera, renderer, model;
+let modelLoaded = false;
 
 // Initialiseer de 3D-scene
 const init3DScene = () => {
-  // Set up de scene, camera, en renderer
   scene = new THREE.Scene();
-  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-  renderer = new THREE.WebGLRenderer();
+
+  camera = new THREE.PerspectiveCamera(
+    75,
+    window.innerWidth / window.innerHeight,
+    0.1,
+    1000
+  );
+  camera.position.z = 5;
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.getElementById('3dCanvas').appendChild(renderer.domElement);
 
-  // Voeg een grid toe aan de scene en zet het onder het model
+  // Grid
   const gridHelper = new THREE.GridHelper(10, 10);
-  gridHelper.position.y = -1;  // Zet het grid 1 eenheid onder het model
+  gridHelper.position.y = -1;
   scene.add(gridHelper);
 
-  // Voeg verlichting toe aan de scene met lagere intensiteit
-  const light = new THREE.DirectionalLight(0xffffff, 0.5);  // Verlaag de intensiteit
-  light.position.set(10, 10, 10);  // Zet de lichtbron op een geschikte positie
-  scene.add(light);
+  // Licht
+  const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+  directionalLight.position.set(10, 10, 10);
+  scene.add(directionalLight);
 
-  // Voeg ambient light toe voor zachte verlichting
-  const ambientLight = new THREE.AmbientLight(0x404040, 0.5);  // Zachte verlichting
+  const ambientLight = new THREE.AmbientLight(0x404040, 0.5);
   scene.add(ambientLight);
 
-  // Zet de camera op een geschikte positie
-  camera.position.z = 5;
+  // Responsive canvas
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
 };
 
 // Laad een GLB-model in de scene
@@ -38,50 +48,80 @@ const loadGLBModel = (url) => {
     url,
     (gltf) => {
       model = gltf.scene;
-      model.position.set(0, 0, 0); // Zet het model in het midden van de scène
+
+      // Automatisch centreren
+      const box = new THREE.Box3().setFromObject(model);
+      const center = box.getCenter(new THREE.Vector3());
+      model.position.sub(center);
+
       scene.add(model);
       animate();
+
+      // Verberg optionele loader/spinner
+      const loaderEl = document.getElementById('loading');
+      if (loaderEl) loaderEl.style.display = 'none';
     },
-    undefined, // Optionele functie voor voortgang
-    (error) => { // Foutafhandelingsfunctie
+    undefined,
+    (error) => {
       console.error('Er is een fout opgetreden bij het laden van het model:', error);
     }
   );
 };
 
-// Laad het model nadat het via de backend is opgehaald
-const loadModelFromBackend = async (taskId) => {
+// Haal model op via backend
+const fetchModelBlob = async (taskId) => {
   try {
-    // Verkrijg het model-bestand als een Blob via de proxy
-    const blob = await fetchModelBlob(taskId);
-
-    // Log de Blob om te controleren of deze daadwerkelijk gegevens bevat
-    console.log(blob);  // Verifiëren of de Blob gegevens bevat
-
-    // Zet de Blob om naar een URL die we kunnen gebruiken in de loader
-    const url = URL.createObjectURL(blob);
-    console.log(url);  // Log de URL om te controleren
-
-    // Laad het model in de Three.js scène
-    loadGLBModel(url);
+    const response = await fetch(`/api/proxyModel/${taskId}`);
+    if (!response.ok) throw new Error('Fout bij het ophalen van modelbestand');
+    return await response.blob();
   } catch (error) {
-    console.error("Fout bij het laden van model via backend:", error);
+    console.error('Fout bij het ophalen van model Blob:', error);
+    throw error;
   }
 };
 
-// Start de animatie van het model
+// Laad model vanaf backend
+const loadModelFromBackend = async (taskId) => {
+  if (modelLoaded) return;
+  modelLoaded = true;
+
+  try {
+    const blob = await fetchModelBlob(taskId);
+    const url = URL.createObjectURL(blob);
+    loadGLBModel(url);
+  } catch (error) {
+    console.error('Fout bij het laden van model via backend:', error);
+  }
+};
+
+// Start animatie
 const animate = () => {
   requestAnimationFrame(animate);
   if (model) {
-    model.rotation.x += 0.01;  // Rotate het model om de x-as
-    model.rotation.y += 0.01;  // Rotate het model om de y-as
+    model.rotation.x += 0.01;
+    model.rotation.y += 0.01;
   }
   renderer.render(scene, camera);
 };
 
-// Initialiseer de 3D-scene
-init3DScene();
+// Poll de status van de task
+const checkTaskStatus = async (taskId) => {
+  try {
+    const response = await fetch(`/api/taskStatus/${taskId}`);
+    const statusData = await response.json();
 
-// Wacht tot de taskId beschikbaar is en laad het model
-const taskId = 'je_task_id_hier';  // Vervang dit met de werkelijke taskId
-loadModelFromBackend(taskId);
+    if (statusData.status === 'SUCCEEDED') {
+      loadModelFromBackend(taskId);
+    } else if (statusData.status === 'FAILED') {
+      console.error('Task is mislukt.');
+    } else {
+      console.log('Task nog niet klaar. Nieuwe poging binnen 3 seconden...');
+      setTimeout(() => checkTaskStatus(taskId), 3000);
+    }
+  } catch (error) {
+    console.error('Fout bij het controleren van de taakstatus:', error);
+  }
+};
+
+// Export functies voor gebruik in andere scripts
+export { init3DScene, checkTaskStatus };
