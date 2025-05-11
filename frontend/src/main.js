@@ -1,4 +1,3 @@
-import * as cocoSsd from '@tensorflow-models/coco-ssd';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -13,7 +12,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     initDownloadButtons();
 
     try {
-        model = await cocoSsd.load();
+        // Laad COCO-SSD model via globale scope (al geïmporteerd via CDN in HTML)
+        model = await window.cocoSsd.load();
         console.log("✅ COCO-SSD geladen");
     } catch (err) {
         console.error("❌ COCO-SSD laadfout:", err);
@@ -66,7 +66,6 @@ function initDownloadButtons() {
                 return;
             }
 
-            // In plaats van modelLoaded, controleer de status van de taskId
             getModelStatus(currentTaskId).then(res => {
                 if (res.status !== "SUCCEEDED") {
                     alert(`Model is nog niet klaar voor download als ${format}.`);
@@ -74,7 +73,8 @@ function initDownloadButtons() {
                     downloadModel(format.toLowerCase());
                 }
             }).catch(err => {
-                alert("Er is een fout opgetreden bij het ophalen van de modelstatus.");
+                console.error("❌ Downloadstatusfout:", err);
+                alert("Fout bij ophalen van modelstatus.");
             });
         };
     });
@@ -157,12 +157,17 @@ function startPolling(taskId) {
 
 async function loadModel(url) {
     try {
+        console.log("🔗 Probeer model te laden van:", url);
+
         const response = await fetch(url);
         const contentType = response.headers.get("Content-Type");
+        const isGLB = contentType?.includes("model/gltf-binary");
 
-        if (!response.ok || !contentType?.includes("model/gltf-binary")) {
-            const errorText = await response.text();
-            console.error("❌ Geen geldig model:", errorText);
+        console.log("📄 Content-Type:", contentType);
+
+        if (!response.ok || !isGLB) {
+            const text = await response.text();
+            console.error("❌ Response geen geldig modelbestand:", text);
             return false;
         }
 
@@ -180,10 +185,11 @@ async function loadModel(url) {
             });
         });
     } catch (e) {
-        console.error("❌ Model laadfout:", e);
+        console.error("❌ Fout tijdens model laden:", e);
         return false;
     }
 }
+
 
 function downloadModel(format = 'glb') {
     const downloadUrl = `/api/proxyModel/${currentTaskId}?format=${format}`;

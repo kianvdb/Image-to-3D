@@ -128,7 +128,7 @@ app.get('/api/getModel/:taskId', async (req, res) => {
   }
 });
 
-// ✅ NIEUW: Proxy endpoint met downloadformaat
+// ✅ Proxy endpoint met logging en fallback
 app.get('/api/proxyModel/:taskId', async (req, res) => {
   const { taskId } = req.params;
   const format = req.query.format || 'glb'; // default = glb
@@ -141,16 +141,23 @@ app.get('/api/proxyModel/:taskId', async (req, res) => {
       { headers }
     );
 
-    if (statusRes.data?.status !== 'SUCCEEDED') {
-      return res.status(400).send(`Model not ready, status: ${statusRes.data?.status}`);
+    const modelStatus = statusRes.data?.status;
+    if (modelStatus !== 'SUCCEEDED') {
+      console.warn(`Model not ready (status: ${modelStatus})`);
+      return res.status(400).send(`Model not ready, status: ${modelStatus}`);
     }
 
-    const urls = statusRes.data?.result?.model_urls || {};
-    const modelUrl = urls[format];
+    const urls = statusRes.data?.result?.model_urls;
+    console.log("📦 Verkregen model_urls:", urls);
 
+    if (!urls) {
+      return res.status(500).send("Geen model_urls gevonden in API response.");
+    }
+
+    const modelUrl = urls[format];
     if (!modelUrl) {
-      console.warn(`Format ${format} not available. Available formats:`, Object.keys(urls));
-      return res.status(404).send(`Format '${format}' not available for this model.`);
+      console.warn(`Format '${format}' niet beschikbaar. Beschikbare formaten: ${Object.keys(urls).join(', ')}`);
+      return res.status(404).send(`Formaat '${format}' niet beschikbaar voor dit model.`);
     }
 
     const fileResponse = await axios.get(modelUrl, { responseType: 'arraybuffer' });
@@ -159,7 +166,8 @@ app.get('/api/proxyModel/:taskId', async (req, res) => {
       glb: 'model/gltf-binary',
       gltf: 'model/gltf+json',
       usdz: 'model/vnd.usdz+zip',
-      obj: 'text/plain'
+      obj: 'text/plain',
+      fbx: 'application/octet-stream'
     };
 
     const contentType = contentTypes[format] || 'application/octet-stream';
