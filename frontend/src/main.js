@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createModel, getModelStatus } from './api.js';
+import { detectRelevantObjects, enableDetection } from './objectDetection.js'; 
 
 let scene, camera, renderer, controls, model;
 let currentTaskId;
@@ -10,15 +11,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
     initScene();
     initDownloadButtons();
-
-    try {
-        // Laad COCO-SSD model via globale scope (al geïmporteerd via CDN in HTML)
-        model = await window.cocoSsd.load();
-        console.log("✅ COCO-SSD geladen");
-    } catch (err) {
-        console.error("❌ COCO-SSD laadfout:", err);
-        alert("Fout bij laden van objectdetectie-model.");
-    }
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
@@ -89,34 +81,41 @@ export async function generateModel() {
     img.src = URL.createObjectURL(file);
 
     img.onload = async () => {
-        console.log("Afbeelding geladen:", img);
+        console.log("🖼️ Afbeelding geladen");
 
         try {
-            const predictions = await model.detect(img);
-            console.log("Herkenning:", predictions);
+            let isRelevant = true;
+            let predictions = [];
 
-            const dogDetected = predictions.some(p => p.class === "dog");
-            console.log("Hond gedetecteerd:", dogDetected);
+            if (enableDetection) {
+                const detection = await detectRelevantObjects(file);
+                predictions = detection.predictions;
+                console.log("🔍 Objectdetectie:", predictions);
 
-            if (!dogDetected) {
-                alert("⚠️ Geen hond gedetecteerd!");
-                return;
+                if (!detection.relevant) {
+                    alert("⚠️ Geen hond gedetecteerd in afbeelding!");
+                    return;
+                }
+
+                console.log("✅ Hond gedetecteerd. Start modelgeneratie...");
+            } else {
+                console.log("🚫 Objectdetectie uitgeschakeld. Ga verder met modelgeneratie.");
             }
 
-            alert("🐶 Hond gevonden! Modelgeneratie gestart...");
+            alert("🛠️ Modelgeneratie gestart...");
             const taskId = await createModel(file);
             if (taskId) {
                 currentTaskId = taskId;
                 startPolling(taskId);
             }
         } catch (err) {
-            console.error("❌ Fout bij objectdetectie:", err);
-            alert("Fout bij objectdetectie.");
+            console.error("❌ Fout bij objectdetectie of modelgeneratie:", err);
+            alert("Er trad een fout op bij het verwerken van de afbeelding.");
         }
     };
 
     img.onerror = () => {
-        alert("Fout bij laden van afbeelding.");
+        alert("❌ Fout bij laden van afbeelding.");
     };
 }
 
@@ -142,7 +141,8 @@ function startPolling(taskId) {
             }
 
             if (res.progress !== undefined) {
-                document.getElementById("progressBar").value = res.progress;
+                const progressBar = document.getElementById("progressBar");
+                if (progressBar) progressBar.value = res.progress;
             }
 
             if (res.status === "FAILED" || res.status === "ERROR") {
@@ -176,6 +176,7 @@ async function loadModel(url) {
 
         return new Promise((resolve) => {
             loader.parse(arrayBuffer, '', (gltf) => {
+                // Verwijder vorige modellen (Group)
                 scene.children = scene.children.filter(obj => !(obj instanceof THREE.Group));
                 scene.add(gltf.scene);
                 resolve(true);
@@ -189,7 +190,6 @@ async function loadModel(url) {
         return false;
     }
 }
-
 
 function downloadModel(format = 'glb') {
     const downloadUrl = `/api/proxyModel/${currentTaskId}?format=${format}`;

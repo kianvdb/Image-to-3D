@@ -1,72 +1,91 @@
 import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
 
+// ✅ Zet deze op false om detectie uit te schakelen
+export const enableDetection = true;
+
 let objectDetector = null;
 
-// Laadt het COCO-SSD model
+// Laadt het COCO-SSD model (eenmalig, met caching)
 export async function loadObjectDetector() {
     if (!objectDetector) {
         console.log("📦 Laden van COCO-SSD model...");
-        objectDetector = await cocoSsd.load();
-        console.log("✅ COCO-SSD geladen!");
+
+        if (!window._cocoModel) {
+            window._cocoModel = await cocoSsd.load();
+            console.log("✅ COCO-SSD geladen en gecached in window");
+        }
+
+        objectDetector = window._cocoModel;
     }
     return objectDetector;
 }
 
 // Detecteert relevante objecten, zoals honden, in de afbeelding
 export async function detectRelevantObjects(imageFile) {
-    const allowedClasses = ["dog"]; // Alleen honden detecteren
+    if (!enableDetection) {
+        console.warn("🚫 Objectdetectie is uitgeschakeld.");
+        return { relevant: true, predictions: [] };
+    }
+
+    const allowedClasses = ["dog"];
+    const confidenceThreshold = 0.5;
 
     return new Promise((resolve, reject) => {
         const img = new Image();
         const reader = new FileReader();
 
-        reader.onload = async () => {
-            img.src = reader.result;
-        };
-
         img.onload = async () => {
-            console.log("Afbeelding geladen:", img);
+            console.log("🖼️ Afbeelding geladen:", img);
+
             try {
-                // Maak een canvas aan om de afbeelding te verwerken
+                await img.decode(); // ✅ Betere compatibiliteit
+
+                const maxDim = 640;
+                let scale = 1;
+                if (img.width > maxDim || img.height > maxDim) {
+                    scale = Math.min(maxDim / img.width, maxDim / img.height);
+                }
+
                 const canvas = document.createElement("canvas");
-                canvas.width = img.width;
-                canvas.height = img.height;
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
                 const ctx = canvas.getContext("2d");
-                ctx.drawImage(img, 0, 0);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-                // Log de canvas afmetingen
-                console.log("Canvas afmetingen:", canvas.width, canvas.height);
+                console.log("🖼️ Canvas grootte:", canvas.width, canvas.height);
 
-                // Wacht op het laden van het model en voer de detectie uit
                 const detector = await loadObjectDetector();
-                console.log("📦 Model geladen, nu starten met detecteren...");
+                console.log("📦 Model geladen, starten met detectie...");
+
                 const predictions = await detector.detect(canvas);
+                console.table(predictions.map(p => ({
+                    class: p.class,
+                    score: p.score.toFixed(2),
+                    bbox: p.bbox
+                })));
 
-                console.log("🔍 Gedetecteerde objecten:", predictions);
-
-                // Filter de voorspellingen om te kijken of er een hond is
                 const relevantObjects = predictions.filter(p =>
-                    allowedClasses.includes(p.class)
+                    allowedClasses.includes(p.class) && p.score > confidenceThreshold
                 );
 
-                // Als er geen relevante objecten zijn
                 if (relevantObjects.length === 0) {
-                    console.warn("⚠️ Geen relevante objecten gevonden:", predictions);
+                    console.warn("⚠️ Geen relevante objecten met voldoende vertrouwen gevonden.");
                     resolve({ relevant: false, predictions });
                 } else {
-                    // Als er wel relevante objecten zijn (zoals een hond)
-                    console.log("✅ Relevante objecten gevonden:", relevantObjects.map(o => o.class));
+                    console.log("✅ Relevante objecten gevonden:", relevantObjects.map(p => `${p.class} (${(p.score * 100).toFixed(1)}%)`));
                     resolve({ relevant: true, predictions: relevantObjects });
                 }
             } catch (err) {
-                // Foutafhandelingsbericht
                 console.error("❌ Fout bij detectie:", err);
                 reject(err);
             }
         };
 
-        // Fout als de afbeelding niet kan worden gelezen
+        reader.onload = () => {
+            img.src = reader.result;
+        };
+
         reader.onerror = () => {
             reject("❌ Kon afbeelding niet lezen.");
         };
