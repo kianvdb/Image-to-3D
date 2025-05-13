@@ -23,12 +23,13 @@ const upload = multer({ storage: storage });
 const YOUR_API_KEY = process.env.MESHY_API_KEY || 'msy_dummy_api_key_for_test_mode_12345678';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-const createPreviewTask = async (imageBase64) => {
+// ✅ Dynamisch topology gebruiken via parameter
+const createPreviewTask = async (imageBase64, topology = 'triangle') => {
   const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
   const payload = {
     image_url: imageBase64,
     ai_model: 'meshy-4',
-    topology: 'triangle',
+    topology: topology, // ← Dynamisch
     target_polycount: 30000,
     should_remesh: true,
     enable_pbr: false,
@@ -93,10 +94,14 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
       return res.status(400).send('No file uploaded.');
     }
 
+    // ✅ topology uitlezen uit het formulier
+    const selectedTopology = req.body.topology || 'triangle';
+    console.log(`Selected topology: ${selectedTopology}`);
+
     const imageBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     console.log('Image received, converting to base64...');
 
-    const previewTaskId = await createPreviewTask(imageBase64);
+    const previewTaskId = await createPreviewTask(imageBase64, selectedTopology);
     console.log(`Preview task started with taskId: ${previewTaskId}`);
 
     await pollPreview(previewTaskId);
@@ -128,7 +133,6 @@ app.get('/api/getModel/:taskId', async (req, res) => {
   }
 });
 
-// ✅ Proxy endpoint met logging en fallback
 app.get('/api/proxyModel/:taskId', async (req, res) => {
   const { taskId } = req.params;
   const format = req.query.format || 'glb'; // default = glb

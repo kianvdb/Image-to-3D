@@ -6,11 +6,13 @@ const proxyUrl = "http://localhost:3000"; // Proxyserver om CORS-problemen te ve
 /**
  * 📌 Upload een afbeelding naar de backend om een 3D-model te genereren.
  * @param {File} imageFile - De afbeelding die omgezet moet worden naar een 3D-model.
+ * @param {string} topology - Optioneel: gewenste mesh topologie ('triangle' of 'quad'). Default is 'triangle'.
  * @returns {Promise<string>} - De taskId die gebruikt wordt om de status op te volgen.
  */
-const createModel = async (imageFile) => {
+const createModel = async (imageFile, topology = 'triangle') => {
   const formData = new FormData();
   formData.append('image', imageFile);
+  formData.append('topology', topology); // ✅ Voeg topology toe aan de upload
 
   try {
     const response = await axios.post(`${proxyUrl}/api/generateModel`, formData, {

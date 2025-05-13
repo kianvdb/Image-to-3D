@@ -94,3 +94,8 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+.topology-btn.selected,
+.topology-btn.active {
+  background-color: #4287f5;
+  color: white;
+}

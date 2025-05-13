@@ -2,15 +2,17 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createModel, getModelStatus } from './api.js';
-import { detectRelevantObjects, enableDetection } from './objectDetection.js'; 
+import { detectRelevantObjects, enableDetection } from './objectDetection.js';
 
 let scene, camera, renderer, controls, model;
 let currentTaskId;
+let selectedTopology = 'triangle'; // standaardwaarde
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
     initScene();
     initDownloadButtons();
+    initTopologyButtons();
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
@@ -72,6 +74,25 @@ function initDownloadButtons() {
     });
 }
 
+function initTopologyButtons() {
+    const buttons = document.querySelectorAll('.topology-btn');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Verwijder 'selected' van alle knoppen
+            buttons.forEach(btn => btn.classList.remove('selected', 'active'));
+
+            // Voeg 'selected' en 'active' toe aan de geklikte knop
+            button.classList.add('selected', 'active');
+
+            // Update topology
+            selectedTopology = button.dataset.topology;
+            console.log(`🔘 Geselecteerde topologie: ${selectedTopology}`);
+        });
+    });
+}
+
+
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
@@ -102,8 +123,8 @@ export async function generateModel() {
                 console.log("🚫 Objectdetectie uitgeschakeld. Ga verder met modelgeneratie.");
             }
 
-            alert("🛠️ Modelgeneratie gestart...");
-            const taskId = await createModel(file);
+            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology}`);
+            const taskId = await createModel(file, selectedTopology); // 👈 topology meegeven
             if (taskId) {
                 currentTaskId = taskId;
                 startPolling(taskId);
