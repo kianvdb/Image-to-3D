@@ -8,13 +8,23 @@ const proxyUrl = "http://localhost:3000"; // Proxyserver om CORS-problemen te ve
  * @param {File} imageFile - De afbeelding die omgezet moet worden naar een 3D-model.
  * @param {string} topology - Optioneel: gewenste mesh topologie ('triangle' of 'quad'). Default is 'triangle'.
  * @param {boolean} shouldTexture - Optioneel: of het model een textuur moet hebben. Default is true.
+ * @param {string} symmetryMode - Optioneel: de symmetrie-modus ('auto' of 'on'). Default is 'auto'.
+ * @param {boolean} enablePBR - Optioneel: of PBR (Physically Based Rendering) moet ingeschakeld zijn. Default is false.
  * @returns {Promise<string>} - De taskId die gebruikt wordt om de status op te volgen.
  */
-const createModel = async (imageFile, topology = 'triangle', shouldTexture = true) => {
+const createModel = async (
+  imageFile,
+  topology = 'triangle',
+  shouldTexture = true,
+  symmetryMode = 'auto',
+  enablePBR = false
+) => {
   const formData = new FormData();
   formData.append('image', imageFile);
-  formData.append('topology', topology); // ✅ Voeg topology toe aan de upload
-  formData.append('should_texture', shouldTexture); // Voeg de texture optie toe
+  formData.append('topology', topology);            // ✅ Topologie parameter
+  formData.append('shouldTexture', shouldTexture);  // ✅ Textuur parameter
+  formData.append('symmetryMode', symmetryMode);    // ✅ Nieuw: symmetrie-modus
+  formData.append('enablePBR', enablePBR);          // ✅ PBR parameter
 
   try {
     const response = await axios.post(`${proxyUrl}/api/generateModel`, formData, {
@@ -39,7 +49,7 @@ const createModel = async (imageFile, topology = 'triangle', shouldTexture = tru
  */
 const getModelStatus = async (taskId) => {
   try {
-    const response = await axios.get(`${proxyUrl}/api/getModel/${taskId}`); // Aangepast naar getModel i.p.v. proxyModel
+    const response = await axios.get(`${proxyUrl}/api/getModel/${taskId}`);
 
     if (!response.data?.status) {
       throw new Error(`❌ Geen geldige status ontvangen voor taskId ${taskId}`);

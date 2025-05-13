@@ -1,0 +1,43 @@
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #242424;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Progress bar styling */
+progress::-webkit-progress-value {
+  background-color: #4287f5;
+}
+
+progress::-moz-progress-bar {
+  background-color: #4287f5;
+}
+
+/* Active and selected buttons */
+.selected {
+  background-color: #4CAF50;
+  color: white;
+  border: 2px solid #3e8e41;
+}
+
+.selected:hover {
+  background-color: #45a049;
+}
+
+/* Light theme overrides */
+@media (prefers-color-scheme: light) {
+  :root {
+    color: #213547;
+    background-color: #ffffff;
+  }
+
+  progress::-webkit-progress-value {
+    background-color: #4287f5;
+  }
+}

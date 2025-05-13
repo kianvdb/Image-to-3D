@@ -1,45 +1,59 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image-to-3D Model Generator</title>
-    <link rel="stylesheet" href="../css/styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Image-to-3D Model Generator</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">
-        <h1>3D Model Generator</h1>
-        
-        <div id="viewer"></div>
+  <div class="container">
+    <h1>3D Model Generator</h1>
 
-        <!-- Image Upload -->
-        <input type="file" id="imageInput" accept="image/*">
-        <button id="generateBtn">Genereer Model</button>
-        
-        <!-- Topology Buttons -->
-        <div id="topologyButtons">
-            <button class="topology-btn" data-topology="triangle">Topologie: Triangle</button>
-            <button class="topology-btn" data-topology="quad">Topologie: Quad</button>
-        </div>
+    <!-- Image Upload -->
+    <input type="file" id="imageInput" accept="image/*"/>
 
-        <!-- Should Texture Buttons -->
-        <div id="shouldTextureButtons">
-            <button class="texture-btn" data-texture="true">Textuur: Ja</button>
-            <button class="texture-btn" data-texture="false">Textuur: Nee</button>
-        </div>
-
-        <!-- Progress Bar -->
-        <progress id="progressBar" value="0" max="100"></progress>
-
-        <!-- Download Buttons -->
-        <div>
-            <button id="downloadGLB">Download GLB</button>
-            <button id="downloadUSDZ">Download USDZ</button>
-            <button id="downloadOBJ">Download OBJ</button>
-            <button id="downloadFBX">Download FBX</button>
-        </div>
+    <!-- Topology Buttons -->
+    <div id="topologyButtons" class="button-group">
+      <button class="topology-btn" data-topology="triangle">Topologie: Triangle</button>
+      <button class="topology-btn" data-topology="quad">Topologie: Quad</button>
     </div>
 
-    <script type="module" src="../frontend/js/main.js"></script>
+    <!-- Texture Buttons -->
+    <div id="shouldTextureButtons" class="button-group">
+      <button class="texture-btn" data-texture="true">Textuur: Ja</button>
+      <button class="texture-btn" data-texture="false">Textuur: Nee</button>
+    </div>
+
+    <!-- Symmetry Buttons -->
+    <div id="symmetryModeButtons" class="button-group">
+      <button class="symmetry-btn" data-symmetry="auto">Symmetrie: Auto</button>
+      <button class="symmetry-btn" data-symmetry="on">Symmetrie: Aan</button>
+    </div>
+
+    <!-- PBR Buttons -->
+    <div id="pbrButtons" class="button-group">
+      <button class="pbr-btn" data-enable="false">PBR: Uit</button>
+      <button class="pbr-btn" data-enable="true">PBR: Aan</button>
+    </div>
+
+    <button id="generateBtn">Genereer Model</button>
+
+    <!-- 3D Viewer -->
+    <div id="viewer"></div>
+
+    <!-- Progress Bar -->
+    <progress id="progressBar" value="0" max="100"></progress>
+
+    <!-- Download Buttons -->
+    <div class="button-group">
+      <button id="downloadGLB">Download GLB</button>
+      <button id="downloadUSDZ">Download USDZ</button>
+      <button id="downloadOBJ">Download OBJ</button>
+      <button id="downloadFBX">Download FBX</button>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
 </body>
 </html>

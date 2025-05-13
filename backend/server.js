@@ -23,18 +23,19 @@ const upload = multer({ storage: storage });
 const YOUR_API_KEY = process.env.MESHY_API_KEY || 'msy_dummy_api_key_for_test_mode_12345678';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// ✅ Dynamisch topology en texture gebruiken via parameter
-const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTexture = true) => {
+// ✅ Dynamisch topology, texture, symmetry en pbr gebruiken
+const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTexture = true, symmetryMode = 'auto', enablePBR = false) => {
   const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
+
   const payload = {
     image_url: imageBase64,
     ai_model: 'meshy-4',
-    topology: topology, // Dynamisch
+    topology,
     target_polycount: 30000,
     should_remesh: true,
-    enable_pbr: false,
-    should_texture: shouldTexture, // Dynamisch
-    symmetry_mode: 'auto',
+    enable_pbr: enablePBR,
+    should_texture: shouldTexture,
+    symmetry_mode: symmetryMode,
     prompt: "dog"
   };
 
@@ -94,15 +95,28 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
       return res.status(400).send('No file uploaded.');
     }
 
-    // ✅ topology en texture uitlezen uit het formulier
-    const selectedTopology = req.body.topology || 'triangle';
-    const shouldTexture = req.body.shouldTexture === 'true'; // Lees texture parameter uit
-    console.log(`Selected topology: ${selectedTopology}, Texture: ${shouldTexture}`);
-
     const imageBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     console.log('Image received, converting to base64...');
 
-    const previewTaskId = await createPreviewTask(imageBase64, selectedTopology, shouldTexture);
+    const selectedTopology = req.body.topology || 'triangle';
+    const shouldTexture = req.body.shouldTexture === 'true';
+    const enablePBR = req.body.enablePBR === 'true';
+
+    // ✅ Valideer symmetryMode expliciet
+    const validSymmetryModes = ['off', 'auto', 'on'];
+    const rawSymmetry = req.body.symmetryMode;
+    const selectedSymmetryMode = validSymmetryModes.includes(rawSymmetry) ? rawSymmetry : 'auto';
+
+    console.log(`Selected topology: ${selectedTopology}, Texture: ${shouldTexture}, Symmetry Mode: ${selectedSymmetryMode}, PBR: ${enablePBR}`);
+
+    const previewTaskId = await createPreviewTask(
+      imageBase64,
+      selectedTopology,
+      shouldTexture,
+      selectedSymmetryMode,
+      enablePBR
+    );
+
     console.log(`Preview task started with taskId: ${previewTaskId}`);
 
     await pollPreview(previewTaskId);
@@ -136,7 +150,7 @@ app.get('/api/getModel/:taskId', async (req, res) => {
 
 app.get('/api/proxyModel/:taskId', async (req, res) => {
   const { taskId } = req.params;
-  const format = req.query.format || 'glb'; // default = glb
+  const format = req.query.format || 'glb';
 
   try {
     const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };

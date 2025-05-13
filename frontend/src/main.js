@@ -8,6 +8,8 @@ let scene, camera, renderer, controls, model;
 let currentTaskId;
 let selectedTopology = 'triangle'; // standaardwaarde
 let selectedTexture = null; // Geen textuur geselecteerd bij de start
+let selectedSymmetry = 'auto'; // standaardwaarde
+let enablePBR = false; // standaard false voor PBR
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
@@ -15,6 +17,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     initDownloadButtons();
     initTopologyButtons();
     initTextureButtons();
+    initSymmetryButtons();
+    initPBRButtons();  
+    // Stel de standaard geselecteerde knop in bij het laden van de pagina
+    document.querySelector('.topology-btn[data-topology="triangle"]').classList.add('selected', 'active');
+    document.querySelector('.texture-btn[data-texture="true"]').classList.add('selected', 'active');
+    document.querySelector('.symmetry-btn[data-symmetry="auto"]').classList.add('selected', 'active');
+    document.querySelector('.pbr-btn[data-enable="false"]').classList.add('selected', 'active');
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
@@ -79,6 +88,11 @@ function initDownloadButtons() {
 function initTopologyButtons() {
     const buttons = document.querySelectorAll('.topology-btn');
 
+    if (buttons.length === 0) {
+        console.warn("Geen topology knoppen gevonden.");
+        return;
+    }
+
     buttons.forEach(button => {
         button.addEventListener('click', () => {
             // Verwijder 'selected' van alle knoppen
@@ -97,6 +111,11 @@ function initTopologyButtons() {
 function initTextureButtons() {
     const buttons = document.querySelectorAll('.texture-btn');
 
+    if (buttons.length === 0) {
+        console.warn("Geen texture knoppen gevonden.");
+        return;
+    }
+
     buttons.forEach(button => {
         button.addEventListener('click', () => {
             // Verwijder 'selected' van alle knoppen
@@ -108,6 +127,51 @@ function initTextureButtons() {
             // Update texture
             selectedTexture = button.dataset.texture;
             console.log(`🔘 Geselecteerde textuur: ${selectedTexture}`);
+        });
+    });
+}
+function initSymmetryButtons() {
+    const buttons = document.querySelectorAll('.symmetry-btn');
+
+    if (buttons.length === 0) {
+        console.warn("Geen symmetrieknoppen gevonden.");
+        return;
+    }
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Verwijder 'selected' en 'active' van alle knoppen
+            buttons.forEach(btn => btn.classList.remove('selected', 'active'));
+
+            // Voeg 'selected' en 'active' toe aan de geklikte knop
+            button.classList.add('selected', 'active');
+
+            // Update symmetrie instelling
+            selectedSymmetry = button.dataset.symmetry;
+            console.log(`🔘 Geselecteerde symmetrie: ${selectedSymmetry}`);
+        });
+    });
+}
+
+function initPBRButtons() {
+    const buttons = document.querySelectorAll('.pbr-btn');
+
+    if (buttons.length === 0) {
+        console.warn("Geen PBR knoppen gevonden.");
+        return;
+    }
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Verwijder 'selected' van alle knoppen
+            buttons.forEach(btn => btn.classList.remove('selected', 'active'));
+
+            // Voeg 'selected' en 'active' toe aan de geklikte knop
+            button.classList.add('selected', 'active');
+
+            // Update enablePBR
+            enablePBR = button.dataset.enable === "true";  // Zet enablePBR op true of false
+            console.log(`🔘 Geselecteerde PBR: ${enablePBR}`);
         });
     });
 }
@@ -142,8 +206,8 @@ export async function generateModel() {
                 console.log("🚫 Objectdetectie uitgeschakeld. Ga verder met modelgeneratie.");
             }
 
-            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology} en textuur: ${selectedTexture}`);
-            const taskId = await createModel(file, selectedTopology, selectedTexture); // Voeg texture toe aan de call
+            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology}, textuur: ${selectedTexture}, en PBR: ${enablePBR}`);
+            const taskId = await createModel(file, selectedTopology, selectedTexture, enablePBR, selectedSymmetry);
             if (taskId) {
                 currentTaskId = taskId;
                 startPolling(taskId);
