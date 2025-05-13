@@ -23,17 +23,17 @@ const upload = multer({ storage: storage });
 const YOUR_API_KEY = process.env.MESHY_API_KEY || 'msy_dummy_api_key_for_test_mode_12345678';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// ✅ Dynamisch topology gebruiken via parameter
-const createPreviewTask = async (imageBase64, topology = 'triangle') => {
+// ✅ Dynamisch topology en texture gebruiken via parameter
+const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTexture = true) => {
   const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
   const payload = {
     image_url: imageBase64,
     ai_model: 'meshy-4',
-    topology: topology, // ← Dynamisch
+    topology: topology, // Dynamisch
     target_polycount: 30000,
     should_remesh: true,
     enable_pbr: false,
-    should_texture: true,
+    should_texture: shouldTexture, // Dynamisch
     symmetry_mode: 'auto',
     prompt: "dog"
   };
@@ -94,14 +94,15 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
       return res.status(400).send('No file uploaded.');
     }
 
-    // ✅ topology uitlezen uit het formulier
+    // ✅ topology en texture uitlezen uit het formulier
     const selectedTopology = req.body.topology || 'triangle';
-    console.log(`Selected topology: ${selectedTopology}`);
+    const shouldTexture = req.body.shouldTexture === 'true'; // Lees texture parameter uit
+    console.log(`Selected topology: ${selectedTopology}, Texture: ${shouldTexture}`);
 
     const imageBase64 = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     console.log('Image received, converting to base64...');
 
-    const previewTaskId = await createPreviewTask(imageBase64, selectedTopology);
+    const previewTaskId = await createPreviewTask(imageBase64, selectedTopology, shouldTexture);
     console.log(`Preview task started with taskId: ${previewTaskId}`);
 
     await pollPreview(previewTaskId);

@@ -7,12 +7,14 @@ const proxyUrl = "http://localhost:3000"; // Proxyserver om CORS-problemen te ve
  * 📌 Upload een afbeelding naar de backend om een 3D-model te genereren.
  * @param {File} imageFile - De afbeelding die omgezet moet worden naar een 3D-model.
  * @param {string} topology - Optioneel: gewenste mesh topologie ('triangle' of 'quad'). Default is 'triangle'.
+ * @param {boolean} shouldTexture - Optioneel: of het model een textuur moet hebben. Default is true.
  * @returns {Promise<string>} - De taskId die gebruikt wordt om de status op te volgen.
  */
-const createModel = async (imageFile, topology = 'triangle') => {
+const createModel = async (imageFile, topology = 'triangle', shouldTexture = true) => {
   const formData = new FormData();
   formData.append('image', imageFile);
   formData.append('topology', topology); // ✅ Voeg topology toe aan de upload
+  formData.append('should_texture', shouldTexture); // Voeg de texture optie toe
 
   try {
     const response = await axios.post(`${proxyUrl}/api/generateModel`, formData, {
@@ -53,23 +55,24 @@ const getModelStatus = async (taskId) => {
 /**
  * 📌 Haal het gegenereerde GLB-bestand op van de backend.
  * @param {string} taskId - De unieke ID van de Meshy-taak.
- * @returns {Promise<Blob>} - Het GLB-modelbestand als blob.
+ * @param {string} format - Optioneel: formaat van het model (bijvoorbeeld 'glb', 'gltf', 'usdz', etc.).
+ * @returns {Promise<Blob>} - Het modelbestand als blob.
  */
-const fetchModelBlob = async (taskId) => {
+const fetchModelBlob = async (taskId, format = 'glb') => {
   try {
-    const response = await axios.get(`${proxyUrl}/api/proxyModel/${taskId}`, {
+    const response = await axios.get(`${proxyUrl}/api/proxyModel/${taskId}?format=${format}`, {
       responseType: 'blob',
     });
 
     const contentType = response.headers['content-type'];
 
-    if (!contentType?.includes("model/gltf-binary")) {
+    if (!contentType?.includes("model/gltf-binary") && format === 'glb') {
       throw new Error("❌ Geen geldig GLB-model ontvangen van backend.");
     }
 
     return response.data;
   } catch (error) {
-    console.error("❌ Fout bij ophalen van GLB-model via proxy:", error);
+    console.error("❌ Fout bij ophalen van model via proxy:", error);
     throw error;
   }
 };

@@ -7,12 +7,14 @@ import { detectRelevantObjects, enableDetection } from './objectDetection.js';
 let scene, camera, renderer, controls, model;
 let currentTaskId;
 let selectedTopology = 'triangle'; // standaardwaarde
+let selectedTexture = null; // Geen textuur geselecteerd bij de start
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
     initScene();
     initDownloadButtons();
     initTopologyButtons();
+    initTextureButtons();
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
@@ -92,6 +94,23 @@ function initTopologyButtons() {
     });
 }
 
+function initTextureButtons() {
+    const buttons = document.querySelectorAll('.texture-btn');
+
+    buttons.forEach(button => {
+        button.addEventListener('click', () => {
+            // Verwijder 'selected' van alle knoppen
+            buttons.forEach(btn => btn.classList.remove('selected', 'active'));
+
+            // Voeg 'selected' en 'active' toe aan de geklikte knop
+            button.classList.add('selected', 'active');
+
+            // Update texture
+            selectedTexture = button.dataset.texture;
+            console.log(`🔘 Geselecteerde textuur: ${selectedTexture}`);
+        });
+    });
+}
 
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
@@ -123,8 +142,8 @@ export async function generateModel() {
                 console.log("🚫 Objectdetectie uitgeschakeld. Ga verder met modelgeneratie.");
             }
 
-            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology}`);
-            const taskId = await createModel(file, selectedTopology); // 👈 topology meegeven
+            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology} en textuur: ${selectedTexture}`);
+            const taskId = await createModel(file, selectedTopology, selectedTexture); // Voeg texture toe aan de call
             if (taskId) {
                 currentTaskId = taskId;
                 startPolling(taskId);
