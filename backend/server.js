@@ -101,7 +101,6 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
     const selectedTopology = req.body.topology || 'triangle';
     const shouldTexture = req.body.shouldTexture === 'true';
     const enablePBR = req.body.enablePBR === 'true';
-
     const validSymmetryModes = ['off', 'auto', 'on'];
     const rawSymmetry = req.body.symmetryMode;
     const selectedSymmetryMode = validSymmetryModes.includes(rawSymmetry) ? rawSymmetry : 'auto';

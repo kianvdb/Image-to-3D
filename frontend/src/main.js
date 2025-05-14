@@ -3,6 +3,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createModel, getModelStatus } from './api.js';
 import { detectRelevantObjects, enableDetection } from './objectDetection.js';
+import { initFlow, showDownloadButtons } from './flow.js';
+
 
 let scene, camera, renderer, controls, model;
 let currentTaskId;
@@ -14,6 +16,8 @@ let selectedPolycount = 30000; // default polycount
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
+
+    initFlow();
     initScene();
     initDownloadButtons();
     initTopologyButtons();
@@ -287,6 +291,7 @@ function startPolling(taskId) {
             }
 
             if (res.status === "SUCCEEDED") {
+                showDownloadButtons();
                 clearInterval(interval);
                 const success = await loadModel(`/api/proxyModel/${taskId}?format=glb`);
                 if (success) {
@@ -345,7 +350,7 @@ async function loadModel(url) {
         return false;
     }
 }
-
+showDownloadButtons();
 function downloadModel(format = 'glb') {
     const downloadUrl = `/api/proxyModel/${currentTaskId}?format=${format}`;
     const filename = `model.${format}`;

@@ -15,12 +15,22 @@
 
     <!-- Image Upload -->
     <input type="file" id="imageInput" accept="image/*"/>
-
+ <!-- Symmetry Buttons -->
+ <div id="symmetryModeButtons" class="button-group">
+  <button class="symmetry-btn" data-symmetry="auto">Symmetrie: Auto</button>
+  <button class="symmetry-btn" data-symmetry="on">Symmetrie: Aan</button>
+</div>
     <!-- Topology Buttons -->
     <div id="topologyButtons" class="button-group">
       <button class="topology-btn" data-topology="triangle">Topologie: Triangle</button>
       <button class="topology-btn" data-topology="quad">Topologie: Quad</button>
     </div>
+       <!-- Polycount -->
+       <div class="polycount-control">
+        <label for="polycountSlider">Polycount:</label>
+        <input type="range" id="polycountSlider" min="100" max="300000" value="30000" step="100">
+        <input type="number" id="polycountInput" min="100" max="300000" value="30000" step="100">
+      </div>
 
     <!-- Texture Buttons -->
     <div id="shouldTextureButtons" class="button-group">
@@ -28,11 +38,7 @@
       <button class="texture-btn" data-texture="false">Textuur: Nee</button>
     </div>
 
-    <!-- Symmetry Buttons -->
-    <div id="symmetryModeButtons" class="button-group">
-      <button class="symmetry-btn" data-symmetry="auto">Symmetrie: Auto</button>
-      <button class="symmetry-btn" data-symmetry="on">Symmetrie: Aan</button>
-    </div>
+  
 
     <!-- PBR Buttons -->
     <div id="pbrButtons" class="button-group">
@@ -40,13 +46,6 @@
       <button class="pbr-btn" data-enable="true">PBR: Aan</button>
     </div>
     
-    <!-- Polycount -->
-    <div class="polycount-control">
-      <label for="polycount-slider">Polycount:</label>
-      <input type="range" id="polycountSlider" min="100" max="300000" value="30000" step="100">
-      <input type="number" id="polycountInput" min="100" max="300000" value="30000" step="100">
-    </div>
-
     <button id="generateBtn">Genereer Model</button>
 
     <!-- 3D Viewer -->

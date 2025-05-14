@@ -19,7 +19,7 @@ const createModel = async (
   shouldTexture = true,
   symmetryMode = 'auto',
   enablePBR = false,
-  polycount = 50000
+  polycount = 30000
 ) => {
   const formData = new FormData();
   formData.append('image', imageFile);
