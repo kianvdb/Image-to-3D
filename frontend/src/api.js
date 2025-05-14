@@ -10,6 +10,7 @@ const proxyUrl = "http://localhost:3000"; // Proxyserver om CORS-problemen te ve
  * @param {boolean} shouldTexture - Optioneel: of het model een textuur moet hebben. Default is true.
  * @param {string} symmetryMode - Optioneel: de symmetrie-modus ('auto' of 'on'). Default is 'auto'.
  * @param {boolean} enablePBR - Optioneel: of PBR (Physically Based Rendering) moet ingeschakeld zijn. Default is false.
+ * @param {number} polycount - Optioneel: gewenste polycount (100 tot 300000). Default is 50000.
  * @returns {Promise<string>} - De taskId die gebruikt wordt om de status op te volgen.
  */
 const createModel = async (
@@ -17,14 +18,16 @@ const createModel = async (
   topology = 'triangle',
   shouldTexture = true,
   symmetryMode = 'auto',
-  enablePBR = false
+  enablePBR = false,
+  polycount = 50000
 ) => {
   const formData = new FormData();
   formData.append('image', imageFile);
   formData.append('topology', topology);            // ✅ Topologie parameter
   formData.append('shouldTexture', shouldTexture);  // ✅ Textuur parameter
-  formData.append('symmetryMode', symmetryMode);    // ✅ Nieuw: symmetrie-modus
+  formData.append('symmetryMode', symmetryMode);    // ✅ Symmetrie parameter
   formData.append('enablePBR', enablePBR);          // ✅ PBR parameter
+  formData.append('polycount', polycount);          // ✅ Nieuw: polycount parameter
 
   try {
     const response = await axios.post(`${proxyUrl}/api/generateModel`, formData, {

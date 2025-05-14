@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Image-to-3D Model Generator</title>
   <link rel="stylesheet" href="styles.css" />
+
+  <!-- Favicon toevoegen -->
+  <link rel="icon" href="/favicon.png" type="image/x-icon" />
 </head>
 <body>
   <div class="container">
@@ -35,6 +38,13 @@
     <div id="pbrButtons" class="button-group">
       <button class="pbr-btn" data-enable="false">PBR: Uit</button>
       <button class="pbr-btn" data-enable="true">PBR: Aan</button>
+    </div>
+    
+    <!-- Polycount -->
+    <div class="polycount-control">
+      <label for="polycount-slider">Polycount:</label>
+      <input type="range" id="polycountSlider" min="100" max="300000" value="30000" step="100">
+      <input type="number" id="polycountInput" min="100" max="300000" value="30000" step="100">
     </div>
 
     <button id="generateBtn">Genereer Model</button>

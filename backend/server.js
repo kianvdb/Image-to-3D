@@ -23,15 +23,15 @@ const upload = multer({ storage: storage });
 const YOUR_API_KEY = process.env.MESHY_API_KEY || 'msy_dummy_api_key_for_test_mode_12345678';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// ✅ Dynamisch topology, texture, symmetry en pbr gebruiken
-const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTexture = true, symmetryMode = 'auto', enablePBR = false) => {
+// ✅ Dynamisch topology, texture, symmetry, pbr én polycount gebruiken
+const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTexture = true, symmetryMode = 'auto', enablePBR = false, targetPolycount = 30000) => {
   const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
 
   const payload = {
     image_url: imageBase64,
     ai_model: 'meshy-4',
     topology,
-    target_polycount: 30000,
+    target_polycount: targetPolycount,
     should_remesh: true,
     enable_pbr: enablePBR,
     should_texture: shouldTexture,
@@ -102,29 +102,36 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
     const shouldTexture = req.body.shouldTexture === 'true';
     const enablePBR = req.body.enablePBR === 'true';
 
-    // ✅ Valideer symmetryMode expliciet
     const validSymmetryModes = ['off', 'auto', 'on'];
     const rawSymmetry = req.body.symmetryMode;
     const selectedSymmetryMode = validSymmetryModes.includes(rawSymmetry) ? rawSymmetry : 'auto';
 
-    console.log(`Selected topology: ${selectedTopology}, Texture: ${shouldTexture}, Symmetry Mode: ${selectedSymmetryMode}, PBR: ${enablePBR}`);
+    // ✅ Dynamische polycount uitlezen en valideren
+    let targetPolycount = parseInt(req.body.targetPolycount);
+    if (isNaN(targetPolycount) || targetPolycount < 100 || targetPolycount > 300000) {
+      console.warn(`Ongeldige polycount ontvangen: ${req.body.targetPolycount}, standaard naar 30000.`);
+      targetPolycount = 30000;
+    }
+
+    console.log(`Topology: ${selectedTopology}, Texture: ${shouldTexture}, Symmetry Mode: ${selectedSymmetryMode}, PBR: ${enablePBR}, Polycount: ${targetPolycount}`);
 
     const previewTaskId = await createPreviewTask(
       imageBase64,
       selectedTopology,
       shouldTexture,
       selectedSymmetryMode,
-      enablePBR
+      enablePBR,
+      targetPolycount
     );
 
-    console.log(`Preview task started with taskId: ${previewTaskId}`);
+    console.log(`Preview task gestart met taskId: ${previewTaskId}`);
 
     await pollPreview(previewTaskId);
-    console.log('Preview task completed (no refine step).');
+    console.log('Preview task voltooid (geen refine-stap).');
 
     res.json({ taskId: previewTaskId, modelUrls: null });
   } catch (error) {
-    console.error('Error during model generation:', error);
+    console.error('Error tijdens modelgeneratie:', error);
     res.status(500).send('Error generating model.');
   }
 });

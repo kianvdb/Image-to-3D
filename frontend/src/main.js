@@ -7,9 +7,10 @@ import { detectRelevantObjects, enableDetection } from './objectDetection.js';
 let scene, camera, renderer, controls, model;
 let currentTaskId;
 let selectedTopology = 'triangle'; // standaardwaarde
-let selectedTexture = null; // Geen textuur geselecteerd bij de start
-let selectedSymmetry = 'auto'; // standaardwaarde
-let enablePBR = false; // standaard false voor PBR
+let selectedTexture = null;
+let selectedSymmetry = 'auto';
+let enablePBR = false;
+let selectedPolycount = 30000; // default polycount
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
@@ -19,7 +20,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTextureButtons();
     initSymmetryButtons();
     initPBRButtons();  
-    // Stel de standaard geselecteerde knop in bij het laden van de pagina
+    initPolycountInput(); // <-- nieuw
+
     document.querySelector('.topology-btn[data-topology="triangle"]').classList.add('selected', 'active');
     document.querySelector('.texture-btn[data-texture="true"]').classList.add('selected', 'active');
     document.querySelector('.symmetry-btn[data-symmetry="auto"]').classList.add('selected', 'active');
@@ -45,6 +47,20 @@ function initScene() {
 
     const gridHelper = new THREE.GridHelper(10, 10);
     scene.add(gridHelper);
+    // Zorg ervoor dat de polycount wordt bijgewerkt wanneer de slider of het invoerveld wordt aangepast
+const polycountSlider = document.getElementById("polycountSlider");
+const polycountInput = document.getElementById("polycountInput");
+
+// Wanneer de slider verandert, werk het inputveld bij
+polycountSlider.addEventListener("input", (event) => {
+  polycountInput.value = event.target.value;
+});
+
+// Wanneer het inputveld verandert, werk de slider bij
+polycountInput.addEventListener("input", (event) => {
+  polycountSlider.value = event.target.value;
+});
+
 
     controls = new OrbitControls(camera, renderer.domElement);
     camera.position.set(0, 3, 5);
@@ -95,13 +111,8 @@ function initTopologyButtons() {
 
     buttons.forEach(button => {
         button.addEventListener('click', () => {
-            // Verwijder 'selected' van alle knoppen
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
-
-            // Voeg 'selected' en 'active' toe aan de geklikte knop
             button.classList.add('selected', 'active');
-
-            // Update topology
             selectedTopology = button.dataset.topology;
             console.log(`🔘 Geselecteerde topologie: ${selectedTopology}`);
         });
@@ -118,18 +129,14 @@ function initTextureButtons() {
 
     buttons.forEach(button => {
         button.addEventListener('click', () => {
-            // Verwijder 'selected' van alle knoppen
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
-
-            // Voeg 'selected' en 'active' toe aan de geklikte knop
             button.classList.add('selected', 'active');
-
-            // Update texture
             selectedTexture = button.dataset.texture;
             console.log(`🔘 Geselecteerde textuur: ${selectedTexture}`);
         });
     });
 }
+
 function initSymmetryButtons() {
     const buttons = document.querySelectorAll('.symmetry-btn');
 
@@ -140,13 +147,8 @@ function initSymmetryButtons() {
 
     buttons.forEach(button => {
         button.addEventListener('click', () => {
-            // Verwijder 'selected' en 'active' van alle knoppen
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
-
-            // Voeg 'selected' en 'active' toe aan de geklikte knop
             button.classList.add('selected', 'active');
-
-            // Update symmetrie instelling
             selectedSymmetry = button.dataset.symmetry;
             console.log(`🔘 Geselecteerde symmetrie: ${selectedSymmetry}`);
         });
@@ -163,23 +165,70 @@ function initPBRButtons() {
 
     buttons.forEach(button => {
         button.addEventListener('click', () => {
-            // Verwijder 'selected' van alle knoppen
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
-
-            // Voeg 'selected' en 'active' toe aan de geklikte knop
             button.classList.add('selected', 'active');
-
-            // Update enablePBR
-            enablePBR = button.dataset.enable === "true";  // Zet enablePBR op true of false
+            enablePBR = button.dataset.enable === "true";
             console.log(`🔘 Geselecteerde PBR: ${enablePBR}`);
         });
     });
 }
 
+// ✅ Nieuw: initialiseer polycount input
+function initPolycountInput() {
+    const polyInput = document.getElementById("polycountInput");
+    const polySlider = document.getElementById("polycountSlider"); // De slider
+    if (!polyInput || !polySlider) {
+        console.warn("Polycount input of slider niet gevonden.");
+        return;
+    }
+
+    // Stel de waarde van het inputveld in op de geselecteerde polycount
+    polyInput.value = selectedPolycount;
+    polySlider.value = selectedPolycount; // Stel de slider ook in op dezelfde waarde
+
+    // Event listener voor het inputveld
+    polyInput.addEventListener("input", () => {
+        const parsed = parseInt(polyInput.value);
+        if (!isNaN(parsed) && parsed > 0) {
+            selectedPolycount = parsed;
+            polySlider.value = selectedPolycount; // Update de slider wanneer het inputveld wordt gewijzigd
+            console.log(`🔢 Polycount ingesteld op: ${selectedPolycount}`);
+        }
+    });
+
+    // Event listener voor de slider
+    polySlider.addEventListener("input", () => {
+        selectedPolycount = parseInt(polySlider.value);
+        polyInput.value = selectedPolycount; // Update het inputveld wanneer de slider wordt verschoven
+        console.log(`🔢 Polycount ingesteld via slider op: ${selectedPolycount}`);
+    });
+}
+
+
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
     if (!file) return alert("Selecteer een afbeelding.");
+
+    // ✅ Controleer polycount-bereik
+    const minPoly = 100;
+    const maxPoly = 300000;
+    if (selectedPolycount < minPoly || selectedPolycount > maxPoly) {
+        const origineleWaarde = selectedPolycount;
+        const aangepasteWaarde = selectedPolycount < minPoly ? minPoly : maxPoly;
+
+        alert(`⚠️ Polycount ${origineleWaarde} is ongeldig. Gelieve een waarde te kiezen tussen ${minPoly} en ${maxPoly}. De waarde is tijdelijk aangepast naar ${aangepasteWaarde}. Je kunt dit nu nog wijzigen.`);
+
+        // ✅ Pas waarde aan en toon in UI, maar stop verdere uitvoering
+        selectedPolycount = aangepasteWaarde;
+
+        const polyInput = document.getElementById("polycountInput");
+        const polySlider = document.getElementById("polycountSlider");
+        if (polyInput) polyInput.value = selectedPolycount;
+        if (polySlider) polySlider.value = selectedPolycount;
+
+        return; // ⛔️ Stop hier! Laat gebruiker opnieuw klikken.
+    }
 
     const img = new Image();
     img.src = URL.createObjectURL(file);
@@ -206,8 +255,9 @@ export async function generateModel() {
                 console.log("🚫 Objectdetectie uitgeschakeld. Ga verder met modelgeneratie.");
             }
 
-            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology}, textuur: ${selectedTexture}, en PBR: ${enablePBR}`);
-            const taskId = await createModel(file, selectedTopology, selectedTexture, enablePBR, selectedSymmetry);
+            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology}, polycount: ${selectedPolycount}, textuur: ${selectedTexture}, PBR: ${enablePBR}, symmetrie: ${selectedSymmetry}`);
+
+            const taskId = await createModel(file, selectedTopology, selectedTexture, enablePBR, selectedSymmetry, selectedPolycount);
             if (taskId) {
                 currentTaskId = taskId;
                 startPolling(taskId);
@@ -222,6 +272,8 @@ export async function generateModel() {
         alert("❌ Fout bij laden van afbeelding.");
     };
 }
+
+
 
 function startPolling(taskId) {
     const interval = setInterval(async () => {
@@ -280,7 +332,6 @@ async function loadModel(url) {
 
         return new Promise((resolve) => {
             loader.parse(arrayBuffer, '', (gltf) => {
-                // Verwijder vorige modellen (Group)
                 scene.children = scene.children.filter(obj => !(obj instanceof THREE.Group));
                 scene.add(gltf.scene);
                 resolve(true);
