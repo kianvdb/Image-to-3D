@@ -5,14 +5,13 @@ import { createModel, getModelStatus } from './api.js';
 import { detectRelevantObjects, enableDetection } from './objectDetection.js';
 import { initFlow, showDownloadButtons } from './flow.js';
 
-
 let scene, camera, renderer, controls, model;
 let currentTaskId;
-let selectedTopology = 'triangle'; // standaardwaarde
+let selectedTopology = 'triangle';
 let selectedTexture = null;
 let selectedSymmetry = 'auto';
 let enablePBR = false;
-let selectedPolycount = 30000; // default polycount
+let selectedPolycount = 30000;
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
@@ -23,13 +22,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTopologyButtons();
     initTextureButtons();
     initSymmetryButtons();
-    initPBRButtons();  
-    initPolycountInput(); // <-- nieuw
+    initPBRButtons();
+    initPolycountInput();
 
+    // ✅ Init selecties
     document.querySelector('.topology-btn[data-topology="triangle"]').classList.add('selected', 'active');
     document.querySelector('.texture-btn[data-texture="true"]').classList.add('selected', 'active');
+    selectedTexture = "true"; // <-- synchroon zetten met UI
     document.querySelector('.symmetry-btn[data-symmetry="auto"]').classList.add('selected', 'active');
     document.querySelector('.pbr-btn[data-enable="false"]').classList.add('selected', 'active');
+    enablePBR = false; // <-- synchroon zetten met UI
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
@@ -51,20 +53,6 @@ function initScene() {
 
     const gridHelper = new THREE.GridHelper(10, 10);
     scene.add(gridHelper);
-    // Zorg ervoor dat de polycount wordt bijgewerkt wanneer de slider of het invoerveld wordt aangepast
-const polycountSlider = document.getElementById("polycountSlider");
-const polycountInput = document.getElementById("polycountInput");
-
-// Wanneer de slider verandert, werk het inputveld bij
-polycountSlider.addEventListener("input", (event) => {
-  polycountInput.value = event.target.value;
-});
-
-// Wanneer het inputveld verandert, werk de slider bij
-polycountInput.addEventListener("input", (event) => {
-  polycountSlider.value = event.target.value;
-});
-
 
     controls = new OrbitControls(camera, renderer.domElement);
     camera.position.set(0, 3, 5);
@@ -108,11 +96,6 @@ function initDownloadButtons() {
 function initTopologyButtons() {
     const buttons = document.querySelectorAll('.topology-btn');
 
-    if (buttons.length === 0) {
-        console.warn("Geen topology knoppen gevonden.");
-        return;
-    }
-
     buttons.forEach(button => {
         button.addEventListener('click', () => {
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
@@ -126,28 +109,31 @@ function initTopologyButtons() {
 function initTextureButtons() {
     const buttons = document.querySelectorAll('.texture-btn');
 
-    if (buttons.length === 0) {
-        console.warn("Geen texture knoppen gevonden.");
-        return;
-    }
-
     buttons.forEach(button => {
         button.addEventListener('click', () => {
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
             button.classList.add('selected', 'active');
             selectedTexture = button.dataset.texture;
             console.log(`🔘 Geselecteerde textuur: ${selectedTexture}`);
+
+            const pbrButtons = document.getElementById("pbrButtons");
+            if (selectedTexture === "true") {
+                // Toon PBR knoppen als textuur "true" is
+                pbrButtons.style.display = "flex";
+            } else {
+                // Verberg PBR knoppen als textuur "false" is
+                pbrButtons.style.display = "none";
+                enablePBR = false;
+                // Reset selectie van PBR-knoppen visueel
+                document.querySelectorAll('.pbr-btn').forEach(btn => btn.classList.remove('selected', 'active'));
+                document.querySelector('.pbr-btn[data-enable="false"]').classList.add('selected', 'active');
+            }
         });
     });
 }
 
 function initSymmetryButtons() {
     const buttons = document.querySelectorAll('.symmetry-btn');
-
-    if (buttons.length === 0) {
-        console.warn("Geen symmetrieknoppen gevonden.");
-        return;
-    }
 
     buttons.forEach(button => {
         button.addEventListener('click', () => {
@@ -162,11 +148,6 @@ function initSymmetryButtons() {
 function initPBRButtons() {
     const buttons = document.querySelectorAll('.pbr-btn');
 
-    if (buttons.length === 0) {
-        console.warn("Geen PBR knoppen gevonden.");
-        return;
-    }
-
     buttons.forEach(button => {
         button.addEventListener('click', () => {
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
@@ -177,61 +158,52 @@ function initPBRButtons() {
     });
 }
 
-// ✅ Nieuw: initialiseer polycount input
 function initPolycountInput() {
     const polyInput = document.getElementById("polycountInput");
-    const polySlider = document.getElementById("polycountSlider"); // De slider
+    const polySlider = document.getElementById("polycountSlider");
+
     if (!polyInput || !polySlider) {
         console.warn("Polycount input of slider niet gevonden.");
         return;
     }
 
-    // Stel de waarde van het inputveld in op de geselecteerde polycount
     polyInput.value = selectedPolycount;
-    polySlider.value = selectedPolycount; // Stel de slider ook in op dezelfde waarde
+    polySlider.value = selectedPolycount;
 
-    // Event listener voor het inputveld
     polyInput.addEventListener("input", () => {
         const parsed = parseInt(polyInput.value);
         if (!isNaN(parsed) && parsed > 0) {
             selectedPolycount = parsed;
-            polySlider.value = selectedPolycount; // Update de slider wanneer het inputveld wordt gewijzigd
+            polySlider.value = selectedPolycount;
             console.log(`🔢 Polycount ingesteld op: ${selectedPolycount}`);
         }
     });
 
-    // Event listener voor de slider
     polySlider.addEventListener("input", () => {
         selectedPolycount = parseInt(polySlider.value);
-        polyInput.value = selectedPolycount; // Update het inputveld wanneer de slider wordt verschoven
+        polyInput.value = selectedPolycount;
         console.log(`🔢 Polycount ingesteld via slider op: ${selectedPolycount}`);
     });
 }
-
 
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
     if (!file) return alert("Selecteer een afbeelding.");
 
-    // ✅ Controleer polycount-bereik
     const minPoly = 100;
     const maxPoly = 300000;
     if (selectedPolycount < minPoly || selectedPolycount > maxPoly) {
         const origineleWaarde = selectedPolycount;
         const aangepasteWaarde = selectedPolycount < minPoly ? minPoly : maxPoly;
 
-        alert(`⚠️ Polycount ${origineleWaarde} is ongeldig. Gelieve een waarde te kiezen tussen ${minPoly} en ${maxPoly}. De waarde is tijdelijk aangepast naar ${aangepasteWaarde}. Je kunt dit nu nog wijzigen.`);
+        alert(`⚠️ Polycount ${origineleWaarde} is ongeldig. Tussen ${minPoly} en ${maxPoly}. Aangepast naar ${aangepasteWaarde}.`);
 
-        // ✅ Pas waarde aan en toon in UI, maar stop verdere uitvoering
         selectedPolycount = aangepasteWaarde;
+        document.getElementById("polycountInput").value = selectedPolycount;
+        document.getElementById("polycountSlider").value = selectedPolycount;
 
-        const polyInput = document.getElementById("polycountInput");
-        const polySlider = document.getElementById("polycountSlider");
-        if (polyInput) polyInput.value = selectedPolycount;
-        if (polySlider) polySlider.value = selectedPolycount;
-
-        return; // ⛔️ Stop hier! Laat gebruiker opnieuw klikken.
+        return;
     }
 
     const img = new Image();
@@ -256,10 +228,10 @@ export async function generateModel() {
 
                 console.log("✅ Hond gedetecteerd. Start modelgeneratie...");
             } else {
-                console.log("🚫 Objectdetectie uitgeschakeld. Ga verder met modelgeneratie.");
+                console.log("🚫 Objectdetectie uitgeschakeld.");
             }
 
-            alert(`🛠️ Modelgeneratie gestart met topologie: ${selectedTopology}, polycount: ${selectedPolycount}, textuur: ${selectedTexture}, PBR: ${enablePBR}, symmetrie: ${selectedSymmetry}`);
+            alert(`🛠️ Genereren met topologie: ${selectedTopology}, polycount: ${selectedPolycount}, textuur: ${selectedTexture}, PBR: ${enablePBR}, symmetrie: ${selectedSymmetry}`);
 
             const taskId = await createModel(file, selectedTopology, selectedTexture, enablePBR, selectedSymmetry, selectedPolycount);
             if (taskId) {
@@ -267,7 +239,7 @@ export async function generateModel() {
                 startPolling(taskId);
             }
         } catch (err) {
-            console.error("❌ Fout bij objectdetectie of modelgeneratie:", err);
+            console.error("❌ Fout bij modelgeneratie:", err);
             alert("Er trad een fout op bij het verwerken van de afbeelding.");
         }
     };
@@ -277,28 +249,19 @@ export async function generateModel() {
     };
 }
 
-
-
 function startPolling(taskId) {
     const interval = setInterval(async () => {
         try {
             const res = await getModelStatus(taskId);
             console.log(`📡 Polling taskId ${taskId}:`, res);
 
-            if (!res) {
-                console.error("❌ Lege response ontvangen.");
-                return;
-            }
+            if (!res) return;
 
             if (res.status === "SUCCEEDED") {
                 showDownloadButtons();
                 clearInterval(interval);
                 const success = await loadModel(`/api/proxyModel/${taskId}?format=glb`);
-                if (success) {
-                    alert("✅ Model succesvol geladen!");
-                } else {
-                    alert("❌ Kon model niet laden.");
-                }
+                alert(success ? "✅ Model succesvol geladen!" : "❌ Kon model niet laden.");
             }
 
             if (res.progress !== undefined) {
@@ -318,17 +281,12 @@ function startPolling(taskId) {
 
 async function loadModel(url) {
     try {
-        console.log("🔗 Probeer model te laden van:", url);
-
         const response = await fetch(url);
         const contentType = response.headers.get("Content-Type");
         const isGLB = contentType?.includes("model/gltf-binary");
 
-        console.log("📄 Content-Type:", contentType);
-
         if (!response.ok || !isGLB) {
-            const text = await response.text();
-            console.error("❌ Response geen geldig modelbestand:", text);
+            console.error("❌ Geen geldig model:", await response.text());
             return false;
         }
 
@@ -341,16 +299,18 @@ async function loadModel(url) {
                 scene.add(gltf.scene);
                 resolve(true);
             }, (err) => {
-                console.error("❌ GLTF parsing fout:", err);
+                console.error("❌ Parsefout GLTF:", err);
                 resolve(false);
             });
         });
     } catch (e) {
-        console.error("❌ Fout tijdens model laden:", e);
+        console.error("❌ Laden mislukt:", e);
         return false;
     }
 }
+
 showDownloadButtons();
+
 function downloadModel(format = 'glb') {
     const downloadUrl = `/api/proxyModel/${currentTaskId}?format=${format}`;
     const filename = `model.${format}`;

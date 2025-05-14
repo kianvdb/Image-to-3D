@@ -27,7 +27,7 @@ const createModel = async (
   formData.append('shouldTexture', shouldTexture);  // ✅ Textuur parameter
   formData.append('symmetryMode', symmetryMode);    // ✅ Symmetrie parameter
   formData.append('enablePBR', enablePBR);          // ✅ PBR parameter
-  formData.append('polycount', polycount);          // ✅ Nieuw: polycount parameter
+  formData.append('targetPolycount', polycount);          // ✅ Nieuw: polycount parameter
 
   try {
     const response = await axios.post(`${proxyUrl}/api/generateModel`, formData, {
