@@ -1,4 +1,5 @@
 require('dotenv').config();
+console.log("🛠️ Loaded API Key:", process.env.MESHY_API_KEY);
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -7,7 +8,6 @@ const path = require('path');
 
 const app = express();
 const port = 3000;
-
 const corsOptions = {
   origin: ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5500'],
   methods: ['GET', 'POST'],
@@ -20,7 +20,7 @@ app.options('*', cors(corsOptions));
 const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
-const YOUR_API_KEY = process.env.MESHY_API_KEY || 'msy_dummy_api_key_for_test_mode_12345678';
+const YOUR_API_KEY = process.env.MESHY_API_KEY || 'msy_dgO5o6R6IKwwBbWYWrerMkUC4iMJSZPHPMYI';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // ✅ Dynamisch topology, texture, symmetry, pbr én polycount gebruiken
