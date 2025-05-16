@@ -40,19 +40,27 @@
 
   
 
-    <!-- PBR Buttons -->
-    <div id="pbrButtons" class="button-group">
-      <button class="pbr-btn" data-enable="false">PBR: Uit</button>
-      <button class="pbr-btn" data-enable="true">PBR: Aan</button>
-    </div>
-    
+ <!-- Vervang de PBR knoppen door een checkbox -->
+<div id="pbrButtons" class="checkbox-group" style="display: none">
+  <label for="pbrCheckbox">
+    <input type="checkbox" id="pbrCheckbox" />
+    PBR: Aan
+  </label>
+</div>
+
     <button id="generateBtn">Genereer Model</button>
+<div id="statusMsg" class="status-message"></div>
+<div id="spinnerContainer" style="display: none; align-items: center; gap: 0.5rem;">
+  <div class="spinner"></div>
+  <span id="progressText">0%</span>
+</div>
 
     <!-- 3D Viewer -->
     <div id="viewer"></div>
 
     <!-- Progress Bar -->
     <progress id="progressBar" value="0" max="100"></progress>
+
 
     <!-- Download Buttons -->
     <div class="button-group">

@@ -41,3 +41,32 @@ progress::-moz-progress-bar {
     background-color: #4287f5;
   }
 }
+.status-message {
+  margin: 1rem 0;
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #444;
+  min-height: 1.5em;
+  transition: opacity 0.3s ease;
+}
+.spinner {
+  border: 4px solid #ccc;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+#spinnerContainer {
+  margin: 1rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+  display: flex;
+}

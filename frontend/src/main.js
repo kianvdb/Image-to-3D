@@ -12,7 +12,6 @@ let selectedTexture = null;
 let selectedSymmetry = 'auto';
 let enablePBR = false;
 let selectedPolycount = 30000;
-
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
 
@@ -22,7 +21,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     initTopologyButtons();
     initTextureButtons();
     initSymmetryButtons();
-    initPBRButtons();
     initPolycountInput();
 
     // ✅ Init selecties
@@ -30,11 +28,21 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.querySelector('.texture-btn[data-texture="true"]').classList.add('selected', 'active');
     selectedTexture = "true"; // <-- synchroon zetten met UI
     document.querySelector('.symmetry-btn[data-symmetry="auto"]').classList.add('selected', 'active');
-    document.querySelector('.pbr-btn[data-enable="false"]').classList.add('selected', 'active');
+
+    // Zet PBR waarde naar false (standaard)
     enablePBR = false; // <-- synchroon zetten met UI
+    document.getElementById("pbrButtons").style.display = "none"; // <-- toon PBR UI initieel
+
+    // Eventlistener voor PBR checkbox
+    const pbrCheckbox = document.getElementById("pbrCheckbox");
+    pbrCheckbox.addEventListener("change", (e) => {
+        enablePBR = e.target.checked;
+        console.log(`🔘 Geselecteerde PBR: ${enablePBR}`);
+    });
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
 });
+
 
 function initScene() {
     scene = new THREE.Scene();
@@ -123,14 +131,16 @@ function initTextureButtons() {
             } else {
                 // Verberg PBR knoppen als textuur "false" is
                 pbrButtons.style.display = "none";
-                enablePBR = false;
-                // Reset selectie van PBR-knoppen visueel
-                document.querySelectorAll('.pbr-btn').forEach(btn => btn.classList.remove('selected', 'active'));
-                document.querySelector('.pbr-btn[data-enable="false"]').classList.add('selected', 'active');
+                const pbrCheckbox = document.getElementById("pbrCheckbox");
+                if (pbrCheckbox) {
+                    pbrCheckbox.checked = false; // Zet checkbox uit
+                }
+                enablePBR = false; // Variabele synchroon zetten
             }
         });
     });
 }
+
 
 function initSymmetryButtons() {
     const buttons = document.querySelectorAll('.symmetry-btn');
@@ -141,19 +151,6 @@ function initSymmetryButtons() {
             button.classList.add('selected', 'active');
             selectedSymmetry = button.dataset.symmetry;
             console.log(`🔘 Geselecteerde symmetrie: ${selectedSymmetry}`);
-        });
-    });
-}
-
-function initPBRButtons() {
-    const buttons = document.querySelectorAll('.pbr-btn');
-
-    buttons.forEach(button => {
-        button.addEventListener('click', () => {
-            buttons.forEach(btn => btn.classList.remove('selected', 'active'));
-            button.classList.add('selected', 'active');
-            enablePBR = button.dataset.enable === "true";
-            console.log(`🔘 Geselecteerde PBR: ${enablePBR}`);
         });
     });
 }
@@ -185,12 +182,38 @@ function initPolycountInput() {
         console.log(`🔢 Polycount ingesteld via slider op: ${selectedPolycount}`);
     });
 }
+// ... Jouw bestaande imports en variabelen ...
+
+function statusMessage(msg, timeout = 0) {
+    return new Promise(resolve => {
+        const el = document.getElementById("statusMsg");
+        if (el) {
+            el.textContent = msg;
+        }
+        setTimeout(resolve, timeout);
+    });
+}
+
+function showSpinner(show = true) {
+    const spinner = document.getElementById("spinnerContainer");
+    if (spinner) {
+        spinner.style.display = show ? "flex" : "none";
+    }
+}
+
+function updateProgress(percent) {
+    const progressEl = document.getElementById("progressText");
+    if (progressEl) {
+        progressEl.textContent = `${percent}%`;
+    }
+}
 
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
     if (!file) return alert("Selecteer een afbeelding.");
 
+    // Polycount validatie (ongewijzigd) ...
     const minPoly = 100;
     const maxPoly = 300000;
     if (selectedPolycount < minPoly || selectedPolycount > maxPoly) {
@@ -213,25 +236,30 @@ export async function generateModel() {
         console.log("🖼️ Afbeelding geladen");
 
         try {
-            let isRelevant = true;
-            let predictions = [];
+            // 1. Scanning picture (2s)
+            await statusMessage("🔍 Scanning picture...", 2000);
 
             if (enableDetection) {
                 const detection = await detectRelevantObjects(file);
-                predictions = detection.predictions;
-                console.log("🔍 Objectdetectie:", predictions);
+                console.log("🔍 Objectdetectie:", detection.predictions);
 
                 if (!detection.relevant) {
-                    alert("⚠️ Geen hond gedetecteerd in afbeelding!");
+                    // Geen hond, melding tonen en spinner verbergen
+                    await statusMessage("❌ No dog found. Please try again or change picture.");
+                    showSpinner(false);
                     return;
                 }
 
-                console.log("✅ Hond gedetecteerd. Start modelgeneratie...");
+                // 2. Dog detected (2s)
+                await statusMessage("✅ Dog detected! Starting generation...", 2000);
             } else {
-                console.log("🚫 Objectdetectie uitgeschakeld.");
+                await statusMessage("🚫 Detection disabled. Starting generation...", 2000);
             }
 
-            alert(`🛠️ Genereren met topologie: ${selectedTopology}, polycount: ${selectedPolycount}, textuur: ${selectedTexture}, PBR: ${enablePBR}, symmetrie: ${selectedSymmetry}`);
+            // 3. Generating + spinner + progress
+            showSpinner(true);
+            updateProgress(0);
+            document.getElementById("statusMsg").textContent = "⚙️ Generating...";
 
             const taskId = await createModel(file, selectedTopology, selectedTexture, enablePBR, selectedSymmetry, selectedPolycount);
             if (taskId) {
@@ -240,12 +268,14 @@ export async function generateModel() {
             }
         } catch (err) {
             console.error("❌ Fout bij modelgeneratie:", err);
-            alert("Er trad een fout op bij het verwerken van de afbeelding.");
+            await statusMessage("❌ Error while processing image.");
+            showSpinner(false);
         }
     };
 
     img.onerror = () => {
         alert("❌ Fout bij laden van afbeelding.");
+        showSpinner(false);
     };
 }
 
@@ -260,24 +290,28 @@ function startPolling(taskId) {
             if (res.status === "SUCCEEDED") {
                 showDownloadButtons();
                 clearInterval(interval);
+                showSpinner(false);
                 const success = await loadModel(`/api/proxyModel/${taskId}?format=glb`);
-                alert(success ? "✅ Model succesvol geladen!" : "❌ Kon model niet laden.");
+                statusMessage(success ? "✅ Model succesvol geladen!" : "❌ Kon model niet laden.");
+                return;
             }
 
             if (res.progress !== undefined) {
-                const progressBar = document.getElementById("progressBar");
-                if (progressBar) progressBar.value = res.progress;
+                updateProgress(res.progress);
             }
 
             if (res.status === "FAILED" || res.status === "ERROR") {
                 clearInterval(interval);
-                alert("❌ Modelgeneratie mislukt.");
+                showSpinner(false);
+                statusMessage("❌ Modelgeneratie mislukt.");
             }
         } catch (e) {
             console.error("❌ Pollingfout:", e);
         }
     }, 5000);
 }
+
+
 
 async function loadModel(url) {
     try {
