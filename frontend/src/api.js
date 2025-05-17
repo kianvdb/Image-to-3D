@@ -33,7 +33,7 @@ const createModel = async (
     const response = await axios.post(`${proxyUrl}/api/generateModel`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-
+console.log("📥 Response van backend:", response.data);
     if (response.data?.taskId) {
       return response.data.taskId;
     } else {
@@ -52,7 +52,7 @@ const createModel = async (
  */
 const getModelStatus = async (taskId) => {
   try {
-    const response = await axios.get(`${proxyUrl}/api/getModel/${taskId}`);
+    const response = await axios.get(`${proxyUrl}/api/status/${taskId}`);
 
     if (!response.data?.status) {
       throw new Error(`❌ Geen geldige status ontvangen voor taskId ${taskId}`);
@@ -64,6 +64,7 @@ const getModelStatus = async (taskId) => {
     throw error;
   }
 };
+
 
 /**
  * 📌 Haal het gegenereerde GLB-bestand op van de backend.

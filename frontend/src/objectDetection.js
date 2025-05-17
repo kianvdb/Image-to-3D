@@ -2,7 +2,7 @@ import * as cocoSsd from "@tensorflow-models/coco-ssd";
 import "@tensorflow/tfjs";
 
 // ✅ Zet deze op false om detectie uit te schakelen
-export const enableDetection = false;
+export const enableDetection = true;
 
 let objectDetector = null;
 

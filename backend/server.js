@@ -1,5 +1,6 @@
 require('dotenv').config();
 console.log("🛠️ Loaded API Key:", process.env.MESHY_API_KEY);
+
 const express = require('express');
 const cors = require('cors');
 const multer = require('multer');
@@ -8,6 +9,7 @@ const path = require('path');
 
 const app = express();
 const port = 3000;
+
 const corsOptions = {
   origin: ['http://localhost:5173', 'http://localhost:3001', 'http://127.0.0.1:5500'],
   methods: ['GET', 'POST'],
@@ -23,7 +25,6 @@ const upload = multer({ storage: storage });
 const YOUR_API_KEY = process.env.MESHY_API_KEY || 'msy_dgO5o6R6IKwwBbWYWrerMkUC4iMJSZPHPMYI';
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-// ✅ Dynamisch topology, texture, symmetry, pbr én polycount gebruiken
 const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTexture = true, symmetryMode = 'auto', enablePBR = false, targetPolycount = 30000) => {
   const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
 
@@ -105,7 +106,6 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
     const rawSymmetry = req.body.symmetryMode;
     const selectedSymmetryMode = validSymmetryModes.includes(rawSymmetry) ? rawSymmetry : 'auto';
 
-    // ✅ Dynamische polycount uitlezen en valideren
     let targetPolycount = parseInt(req.body.targetPolycount);
     if (isNaN(targetPolycount) || targetPolycount < 100 || targetPolycount > 300000) {
       console.warn(`Ongeldige polycount ontvangen: ${req.body.targetPolycount}, standaard naar 30000.`);
@@ -125,15 +125,15 @@ app.post('/api/generateModel', upload.single('image'), async (req, res) => {
 
     console.log(`Preview task gestart met taskId: ${previewTaskId}`);
 
-    await pollPreview(previewTaskId);
-    console.log('Preview task voltooid (geen refine-stap).');
-
+    // ✅ Verander: GEEN polling doen – frontend doet dit zelf
     res.json({ taskId: previewTaskId, modelUrls: null });
+
   } catch (error) {
     console.error('Error tijdens modelgeneratie:', error);
     res.status(500).send('Error generating model.');
   }
 });
+
 
 app.get('/api/getModel/:taskId', async (req, res) => {
   const { taskId } = req.params;
@@ -150,6 +150,26 @@ app.get('/api/getModel/:taskId', async (req, res) => {
     res.json(response.data);
   } catch (error) {
     console.error('Error retrieving model status:', error.response?.data || error.message);
+    res.status(500).send('Error retrieving model status.');
+  }
+});
+
+// ✅ Toegevoegde route: alias voor status-check
+app.get('/api/status/:taskId', async (req, res) => {
+  const { taskId } = req.params;
+  console.log(`Received status request (alias /status) for taskId: ${taskId}`);
+
+  try {
+    const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };
+    const response = await axios.get(
+      `https://api.meshy.ai/openapi/v1/image-to-3d/${taskId}`,
+      { headers }
+    );
+
+    console.log('Model status response (via /status):', response.data);
+    res.json(response.data);
+  } catch (error) {
+    console.error('Error retrieving model status (/status route):', error.response?.data || error.message);
     res.status(500).send('Error retrieving model status.');
   }
 });
