@@ -4,6 +4,9 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createModel, getModelStatus } from './api.js';
 import { detectRelevantObjects, enableDetection } from './objectDetection.js';
 import { initFlow, showDownloadButtons } from './flow.js';
+import gsap from "gsap";
+
+
 
 let scene, camera, renderer, controls, model;
 let currentTaskId;
@@ -46,26 +49,49 @@ document.addEventListener("DOMContentLoaded", async () => {
 
 function initScene() {
     scene = new THREE.Scene();
-    camera = new THREE.PerspectiveCamera(75, 600 / 400, 0.1, 1000);
-    renderer = new THREE.WebGLRenderer({ antialias: true });
+
+    // Stel een neutrale achtergrondkleur in (optioneel)
+scene.background = new THREE.Color(0x000000);
+
+    camera = new THREE.PerspectiveCamera(45, 600 / 400, 0.1, 1000);
+    camera.position.set(0, 2, 10); // dichterbij + iets boven voor een goede hoek
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(600, 400);
+    renderer.shadowMap.enabled = true; // voor realistisch licht
 
     const viewer = document.getElementById("viewer");
     viewer.innerHTML = "";
     viewer.appendChild(renderer.domElement);
 
-    const light = new THREE.DirectionalLight(0xffffff, 1);
-    light.position.set(5, 5, 5);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040));
+    // 🌞 BELICHTING - meerdere lichten voor optimale weergave
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // zacht algemeen licht
+    scene.add(ambientLight);
 
-    const gridHelper = new THREE.GridHelper(10, 10);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(3, 10, 5);
+    directionalLight.castShadow = true;
+    scene.add(directionalLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    fillLight.position.set(-3, 5, -2);
+    scene.add(fillLight);
+
+    const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    backLight.position.set(0, 3, -5);
+    scene.add(backLight);
+
+    // 📏 GRID - onder het model (y=0)
+const gridHelper = new THREE.GridHelper(10, 10, 0xffffff, 0xffffff);
+    gridHelper.position.y = -0.95;
     scene.add(gridHelper);
 
+    // Orbit controls
     controls = new OrbitControls(camera, renderer.domElement);
-    camera.position.set(0, 3, 5);
+    controls.target.set(0, 1, 0); // richt op midden van model
     controls.update();
 
+    // 🌀 Animatielus
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
@@ -360,7 +386,34 @@ async function loadModel(url) {
             loader.parse(arrayBuffer, '', (gltf) => {
                 // Verwijder oude modelgroepen
                 scene.children = scene.children.filter(obj => !(obj instanceof THREE.Group));
-                scene.add(gltf.scene);
+
+                const model = gltf.scene;
+
+                // 📏 Start: kleine schaal en geen rotatie
+                model.scale.set(0.01, 0.01, 0.01);
+                model.rotation.y = 0;
+
+                scene.add(model);
+
+                // 🌀 Animeer schaal van klein naar normaal
+                gsap.to(model.scale, {
+                    x: 1,
+                    y: 1,
+                    z: 1,
+                    duration: 2,
+                    ease: "power2.out"
+                });
+
+                // 🔄 Roteer 360° tijdens laden
+                gsap.to(model.rotation, {
+                    y: Math.PI * 2,
+                    duration: 2.5,
+                    ease: "power2.out"
+                });
+
+                // 🔍 Smooth camera-zoom naar het model
+                frameModel(model);
+
                 resolve(true);
             }, (err) => {
                 console.error("❌ Parsefout GLTF:", err);
@@ -372,6 +425,41 @@ async function loadModel(url) {
         return false;
     }
 }
+
+
+function frameModel(model) {
+    const box = new THREE.Box3().setFromObject(model);
+    const size = box.getSize(new THREE.Vector3());
+    const center = box.getCenter(new THREE.Vector3());
+
+    const maxDim = Math.max(size.x, size.y, size.z);
+    const fov = camera.fov * (Math.PI / 180);
+let targetDistance = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
+targetDistance = Math.max(targetDistance, 5); // 📏 minimaal 3 eenheden afstand
+
+
+    const newPos = {
+        x: center.x,
+        y: center.y + maxDim * 0.3,
+        z: center.z + targetDistance,
+    };
+
+    // 🌠 Smooth animatie met GSAP
+    gsap.to(camera.position, {
+        duration: 2,
+        x: newPos.x,
+        y: newPos.y,
+        z: newPos.z,
+        ease: "power2.out",
+        onUpdate: () => {
+            camera.lookAt(center);
+            controls.target.copy(center);
+            controls.update();
+        }
+    });
+}
+
+
 
 showDownloadButtons();
 
