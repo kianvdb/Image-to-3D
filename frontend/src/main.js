@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { createModel, getModelStatus } from './api.js';
 import { detectRelevantObjects, enableDetection } from './objectDetection.js';
 import { initFlow, showDownloadButtons } from './flow.js';
+import { dogFacts } from './dogfacts.js';
 import gsap from "gsap";
 
 
@@ -15,9 +16,16 @@ let selectedTexture = null;
 let selectedSymmetry = 'auto';
 let enablePBR = false;
 let selectedPolycount = 30000;
+let dogFactOverlay;
+let factInterval;
+let factIndex = 0;
+
+// Move the dogFactOverlay initialization inside DOMContentLoaded
+// This ensures the DOM is fully loaded before trying to access elements
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
+
 
     initFlow();
     initScene();
@@ -48,21 +56,33 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function initScene() {
-    scene = new THREE.Scene();
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x000000);
 
-    // Stel een neutrale achtergrondkleur in (optioneel)
-scene.background = new THREE.Color(0x000000);
+  camera = new THREE.PerspectiveCamera(45, 600 / 400, 0.1, 1000);
+  camera.position.set(0, 2, 10);
 
-    camera = new THREE.PerspectiveCamera(45, 600 / 400, 0.1, 1000);
-    camera.position.set(0, 2, 10); // dichterbij + iets boven voor een goede hoek
+  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setSize(600, 400);
+  renderer.shadowMap.enabled = true;
 
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-    renderer.setSize(600, 400);
-    renderer.shadowMap.enabled = true; // voor realistisch licht
-
-    const viewer = document.getElementById("viewer");
-    viewer.innerHTML = "";
-    viewer.appendChild(renderer.domElement);
+  // Get the 3dCanvas element for proper DOM manipulation
+  const canvas3d = document.getElementById("3dCanvas");
+  
+  // Important: Store any existing child elements like the overlay
+  const dogFactOverlay = document.getElementById("dogFactOverlay");
+  
+  // Clear only the WebGL canvas elements, not everything
+  const existingCanvases = canvas3d.querySelectorAll("canvas");
+  existingCanvases.forEach(canvas => canvas.remove());
+  
+  // Add the new renderer canvas
+  canvas3d.appendChild(renderer.domElement);
+  
+  // Ensure proper overlay positioning by making it a sibling of the renderer canvas
+  if (dogFactOverlay && !canvas3d.contains(dogFactOverlay)) {
+    canvas3d.appendChild(dogFactOverlay);
+  }
 
     // 🌞 BELICHTING - meerdere lichten voor optimale weergave
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // zacht algemeen licht
@@ -238,6 +258,79 @@ function updateProgress(percent) {
     }
 }
 
+// Fix for the dogFactOverlay issue
+
+// Make these changes to your main.js file:
+
+// 1. Remove this line from inside the DOMContentLoaded event listener:
+// dogFactOverlay = document.getElementById('dogFactOverlay');
+
+// 2. Replace your startDogFacts() function with this implementation:
+function startDogFacts() {
+  if (!dogFacts || !dogFacts.length) {
+    console.warn("⚠️ dogFacts array is leeg of niet gedefinieerd.");
+    return;
+  }
+  
+  // Create the overlay element if it doesn't exist
+  let dogFactOverlay = document.getElementById('dogFactOverlay');
+  if (!dogFactOverlay) {
+    console.log("🐾 dogFactOverlay niet gevonden, wordt aangemaakt...");
+    dogFactOverlay = document.createElement('div');
+    dogFactOverlay.id = 'dogFactOverlay';
+    document.getElementById('viewer').appendChild(dogFactOverlay);
+  }
+
+  console.log("▶️ startDogFacts() gestart.");
+  factIndex = 0;
+  
+  // Set content and make visible
+  dogFactOverlay.innerHTML = `<p>${dogFacts[factIndex]}</p>`;
+  dogFactOverlay.style.display = 'flex'; // Set display to flex before adding the visible class
+  
+  // Allow DOM to update before adding the visible class (for animation)
+  setTimeout(() => {
+    dogFactOverlay.classList.add('visible');
+    console.log("🐾 Overlay zichtbaar gemaakt met eerste feit:", dogFacts[factIndex]);
+  }, 10);
+
+  // Start interval to cycle through facts
+  if (factInterval) {
+    clearInterval(factInterval); // Clear any existing interval
+  }
+  
+  factInterval = setInterval(() => {
+    factIndex = (factIndex + 1) % dogFacts.length;
+    dogFactOverlay.innerHTML = `<p>${dogFacts[factIndex]}</p>`;
+    console.log(`🐾 Nieuwe dog fact getoond: ${dogFacts[factIndex]}`);
+  }, 5000);
+}
+
+// 3. Also update the stopDogFacts() function:
+function stopDogFacts() {
+  console.log("⏹️ stopDogFacts() gestart.");
+  
+  // Clear the interval
+  if (factInterval) {
+    clearInterval(factInterval);
+    factInterval = null;
+    console.log("⏹️ Interval gestopt.");
+  }
+  
+  // Hide the overlay
+  const dogFactOverlay = document.getElementById('dogFactOverlay');
+  if (dogFactOverlay) {
+    dogFactOverlay.classList.remove('visible');
+    // Wait for transition to complete before changing display
+    setTimeout(() => {
+      dogFactOverlay.style.display = 'none';
+    }, 500); // Match this with your CSS transition time
+    console.log("🐾 Overlay verborgen.");
+  } else {
+    console.warn("⚠️ dogFactOverlay niet beschikbaar in stopDogFacts.");
+  }
+}
+
 export async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
@@ -285,6 +378,8 @@ export async function generateModel() {
 
                 console.log("✅ Hond gedetecteerd.");
                 await statusMessage("✅ Dog detected! Starting generation...", 2000);
+                startDogFacts();
+
             } else {
                 console.log("🚫 Detectie uitgeschakeld.");
                 await statusMessage("🚫 Detection disabled. Starting generation...", 2000);
@@ -351,6 +446,7 @@ function startPolling(taskId) {
                 clearInterval(interval);
                 showSpinner(false);
                 showDownloadButtons();
+                stopDogFacts();
                 const success = await loadModel(`/api/proxyModel/${taskId}?format=glb`);
                 await statusMessage(success ? "✅ Model succesvol geladen!" : "❌ Kon model niet laden.");
                 return;
@@ -425,7 +521,6 @@ async function loadModel(url) {
         return false;
     }
 }
-
 
 function frameModel(model) {
     const box = new THREE.Box3().setFromObject(model);

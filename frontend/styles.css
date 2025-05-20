@@ -41,6 +41,7 @@ progress::-moz-progress-bar {
     background-color: #4287f5;
   }
 }
+
 .status-message {
   margin: 1rem 0;
   font-size: 1.1rem;
@@ -49,6 +50,7 @@ progress::-moz-progress-bar {
   min-height: 1.5em;
   transition: opacity 0.3s ease;
 }
+
 .spinner {
   border: 4px solid #ccc;
   border-top: 4px solid #007bff;
@@ -69,4 +71,53 @@ progress::-moz-progress-bar {
   font-size: 1rem;
   font-weight: 500;
   display: flex;
+}
+
+#viewer {
+  position: relative; /* Zorgt dat overlay relatief aan deze div geplaatst kan worden */
+  /* geen achtergrondkleur of zichtbare styling */
+}
+
+#3dCanvas {
+  width: 100%;
+  height: 500px;
+  display: block; /* voorkom inline spacing issues */
+  /* geen achtergrondkleur; canvas wordt door 3D lib gevuld */
+  z-index: -10;
+}
+
+/* Updated CSS for dogFactOverlay */
+
+#dogFactOverlay {
+  display: none; /* Hide by default */
+  background-color: rgba(0, 0, 0, 0.7); /* Dark background with transparency */
+  color: white;
+  font-size: 1.2rem; /* Slightly smaller font for better fit */
+  font-weight: bold;
+  text-align: center;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%; /* Match the width of the 3D canvas */
+  height: 100%; /* Match the height of the 3D canvas */
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+  opacity: 0;
+  padding: 20px;
+  box-sizing: border-box; /* Ensure padding doesn't affect overall size */
+  pointer-events: none; /* Let clicks pass through to the 3D viewer underneath */
+}
+
+#dogFactOverlay.visible {
+  opacity: 1;
+}
+
+#dogFactOverlay p {
+  background-color: rgba(0, 0, 0, 0.6);
+  padding: 15px;
+  border-radius: 10px;
+  max-width: 80%;
+  margin: 0 auto; /* Center horizontally */
 }
