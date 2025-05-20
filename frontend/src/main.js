@@ -56,36 +56,44 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 function initScene() {
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x000000);
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x000000);
 
-  camera = new THREE.PerspectiveCamera(45, 600 / 400, 0.1, 1000);
-  camera.position.set(0, 2, 10);
+    // Get the 3dCanvas element to match its size
+    const canvas3d = document.getElementById("3dCanvas");
+    const canvasRect = canvas3d.getBoundingClientRect();
+    
+    // Use the actual canvas dimensions
+    const width = canvasRect.width || 600;
+    const height = canvasRect.height || 500;
 
-  renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  renderer.setSize(600, 400);
-  renderer.shadowMap.enabled = true;
+    camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 1000);
+    camera.position.set(0, 2, 10);
 
-  // Get the 3dCanvas element for proper DOM manipulation
-  const canvas3d = document.getElementById("3dCanvas");
-  
-  // Important: Store any existing child elements like the overlay
-  const dogFactOverlay = document.getElementById("dogFactOverlay");
-  
-  // Clear only the WebGL canvas elements, not everything
-  const existingCanvases = canvas3d.querySelectorAll("canvas");
-  existingCanvases.forEach(canvas => canvas.remove());
-  
-  // Add the new renderer canvas
-  canvas3d.appendChild(renderer.domElement);
-  
-  // Ensure proper overlay positioning by making it a sibling of the renderer canvas
-  if (dogFactOverlay && !canvas3d.contains(dogFactOverlay)) {
-    canvas3d.appendChild(dogFactOverlay);
-  }
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(width, height);
+    renderer.shadowMap.enabled = true;
 
-    // 🌞 BELICHTING - meerdere lichten voor optimale weergave
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6); // zacht algemeen licht
+    // Store the overlay before clearing
+    const dogFactOverlay = document.getElementById("dogFactOverlay");
+    
+    // Clear only existing canvas elements
+    const existingCanvases = canvas3d.querySelectorAll("canvas");
+    existingCanvases.forEach(canvas => canvas.remove());
+    
+    // Add the renderer canvas
+    renderer.domElement.style.display = 'block';
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = '100%';
+    canvas3d.appendChild(renderer.domElement);
+    
+    // Ensure overlay stays in place and is properly sized
+    if (dogFactOverlay && !canvas3d.contains(dogFactOverlay)) {
+        canvas3d.appendChild(dogFactOverlay);
+    }
+
+    // Rest of your lighting setup
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
     scene.add(ambientLight);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -101,17 +109,16 @@ function initScene() {
     backLight.position.set(0, 3, -5);
     scene.add(backLight);
 
-    // 📏 GRID - onder het model (y=0)
-const gridHelper = new THREE.GridHelper(10, 10, 0xffffff, 0xffffff);
+    const gridHelper = new THREE.GridHelper(10, 10, 0xffffff, 0xffffff);
     gridHelper.position.y = -0.95;
     scene.add(gridHelper);
 
     // Orbit controls
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.target.set(0, 1, 0); // richt op midden van model
+    controls.target.set(0, 1, 0);
     controls.update();
 
-    // 🌀 Animatielus
+    // Animation loop
     function animate() {
         requestAnimationFrame(animate);
         controls.update();
