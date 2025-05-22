@@ -17,9 +17,10 @@ function init3D() {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0a0a);
     
-    // Camera
-    camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
-    camera.position.set(4, 2, 4);
+    // Camera positioned lower and angled for depth
+    camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(6, 1.5, 8); // Lower Y position for ground level view
+    camera.lookAt(0, 1, 0); // Look at the model center
     
     // Renderer
     renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -32,8 +33,8 @@ function init3D() {
     // Controls
     setupControls();
     
-    // Grid (faint)
-    createGrid();
+    // Create static grid (no spinning)
+    createStaticGrid();
     
     // Create dog models
     createDogModels();
@@ -52,16 +53,15 @@ function init3D() {
 }
 
 function setupControls() {
-    // Note: You'll need to include OrbitControls in your HTML
-    // <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    // <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    
     if (typeof THREE.OrbitControls !== 'undefined') {
         controls = new THREE.OrbitControls(camera, renderer.domElement);
         controls.enableDamping = true;
         controls.dampingFactor = 0.05;
-        controls.autoRotate = true;
-        controls.autoRotateSpeed = 0.5;
+        controls.autoRotate = false; // Disable auto-rotate to stop grid spinning
+        controls.autoRotateSpeed = 0;
+        controls.target.set(0, 1, 0); // Focus on model center
+        controls.minPolarAngle = Math.PI * 0.2; // Limit top view
+        controls.maxPolarAngle = Math.PI * 0.7; // Limit bottom view
         
         // Track user interaction
         controls.addEventListener('start', onControlsStart);
@@ -71,28 +71,92 @@ function setupControls() {
 
 function onControlsStart() {
     lastInteraction = Date.now();
-    if (controls) {
-        controls.autoRotate = false;
-    }
+    // No auto-rotate to disable since it's turned off
 }
 
 function onControlsEnd() {
     lastInteraction = Date.now();
-    // Resume auto-rotation after 2 seconds of inactivity
-    clearTimeout(autoRotateTimeout);
-    autoRotateTimeout = setTimeout(() => {
-        if (controls) {
-            controls.autoRotate = true;
-        }
-    }, 2000);
+    // No auto-rotate to resume since it's turned off
 }
 
-function createGrid() {
-    const gridHelper = new THREE.GridHelper(10, 20, 0x333333, 0x333333);
-    gridHelper.material.opacity = 0;
+function createStaticGrid() {
+    // Create a perspective grid that extends into the distance
+    const gridSize = 50;
+    const gridDivisions = 50;
+    
+    // Create the main perspective grid
+    const gridHelper = new THREE.GridHelper(gridSize, gridDivisions, 0x00bcd4, 0x333333);
+    gridHelper.material.opacity = 0.3;
     gridHelper.material.transparent = true;
-    gridHelper.position.y = -2;
-    scene.add(gridHelper);
+    gridHelper.position.y = -0.5;
+    
+    // Create a custom shader material for better perspective fade effect
+    const gridMaterial = new THREE.ShaderMaterial({
+        uniforms: {
+            fogColor: { value: new THREE.Color(0x0a0a0a) },
+            fogNear: { value: 10 },
+            fogFar: { value: 40 }
+        },
+        vertexShader: `
+            varying vec3 vWorldPosition;
+            void main() {
+                vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+                vWorldPosition = worldPosition.xyz;
+                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+            }
+        `,
+        fragmentShader: `
+            uniform vec3 fogColor;
+            uniform float fogNear;
+            uniform float fogFar;
+            varying vec3 vWorldPosition;
+            
+            void main() {
+                float depth = distance(vWorldPosition, cameraPosition);
+                float fogFactor = smoothstep(fogNear, fogFar, depth);
+                
+                vec3 gridColor = vec3(0.0, 0.737, 0.831); // #00bcd4 in RGB
+                vec3 finalColor = mix(gridColor, fogColor, fogFactor);
+                
+                gl_FragColor = vec4(finalColor, 1.0 - fogFactor);
+            }
+        `,
+        transparent: true
+    });
+    
+    // Create grid geometry manually for better control
+    const gridGeometry = new THREE.BufferGeometry();
+    const vertices = [];
+    const halfSize = gridSize / 2;
+    const step = gridSize / gridDivisions;
+    
+    // Vertical lines
+    for (let i = 0; i <= gridDivisions; i++) {
+        const x = -halfSize + i * step;
+        vertices.push(x, 0, -halfSize);
+        vertices.push(x, 0, halfSize);
+    }
+    
+    // Horizontal lines
+    for (let i = 0; i <= gridDivisions; i++) {
+        const z = -halfSize + i * step;
+        vertices.push(-halfSize, 0, z);
+        vertices.push(halfSize, 0, z);
+    }
+    
+    gridGeometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+    
+    const perspectiveGrid = new THREE.LineSegments(gridGeometry, gridMaterial);
+    perspectiveGrid.position.y = -0.5;
+    
+    scene.add(perspectiveGrid);
+    
+    // Add a subtle secondary grid for depth
+    const secondaryGrid = new THREE.GridHelper(gridSize * 0.6, gridDivisions * 0.6, 0x00bcd4, 0x00bcd4);
+    secondaryGrid.material.opacity = 0.1;
+    secondaryGrid.material.transparent = true;
+    secondaryGrid.position.y = -0.48;
+    scene.add(secondaryGrid);
 }
 
 function createDogModels() {
@@ -219,21 +283,26 @@ function createDogGeometry() {
 
 function setupLighting() {
     // Ambient light
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+    const ambientLight = new THREE.AmbientLight(0x404040, 0.4);
     scene.add(ambientLight);
     
-    // Main directional light
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 5, 5);
+    // Main directional light from above-front
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(5, 8, 5);
     directionalLight.castShadow = true;
     directionalLight.shadow.mapSize.width = 2048;
     directionalLight.shadow.mapSize.height = 2048;
     scene.add(directionalLight);
     
-    // Fill light
-    const fillLight = new THREE.DirectionalLight(0x00bcd4, 0.3);
+    // Fill light from the side
+    const fillLight = new THREE.DirectionalLight(0x00bcd4, 0.2);
     fillLight.position.set(-3, 2, -2);
     scene.add(fillLight);
+    
+    // Rim light for depth
+    const rimLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    rimLight.position.set(-2, 3, -5);
+    scene.add(rimLight);
 }
 
 function showModel(model) {
@@ -342,12 +411,12 @@ function animate() {
         controls.update();
     }
     
-    // Rotate models
+    // Rotate models slowly in OPPOSITE direction (counter-clockwise)
     if (greyModel) {
-        greyModel.rotation.y += 0.01;
+        greyModel.rotation.y -= 0.003; // Much slower rotation
     }
     if (texturedModel) {
-        texturedModel.rotation.y += 0.01;
+        texturedModel.rotation.y -= 0.003; // Much slower rotation
     }
     
     renderer.render(scene, camera);
@@ -378,3 +447,12 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         }
     });
 });
+
+// Mobile navigation toggle
+function toggleMobileNav() {
+    const hamburger = document.querySelector('.hamburger');
+    const mobileNav = document.getElementById('mobileNav');
+    
+    hamburger.classList.toggle('active');
+    mobileNav.classList.toggle('active');
+}

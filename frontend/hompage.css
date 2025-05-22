@@ -33,12 +33,13 @@ button, .button, .btn {
 .logo-section {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    flex-shrink: 0; /* Prevent the logo section from shrinking */
 }
 
 .logo {
-    width: 40px;
-    height: 40px;
+    height: 45px;
+    width: 179px; /* Based on aspect ratio: 1528/384 * 45 */
+    object-fit: contain; /* Maintain aspect ratio without stretching */
 }
 
 .brand-name {
@@ -68,7 +69,7 @@ button, .button, .btn {
 }
 
 .nav-left a {
-    color: rgba(255, 255, 255, 0.8);
+    color: white;
     text-decoration: none;
     font-family: 'Inter', sans-serif;
     font-weight: 500;
@@ -81,10 +82,10 @@ button, .button, .btn {
 }
 
 .account-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
     color: white;
     padding: 0.6rem 1.2rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid #00bcd4;
     border-radius: 6px;
     font-family: 'Sora', sans-serif;
     font-weight: 500;
@@ -92,12 +93,14 @@ button, .button, .btn {
     cursor: pointer;
     transition: all 0.3s ease;
     backdrop-filter: blur(10px);
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
 }
 
 .account-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 188, 212, 0.1);
+    border-color: #00e5ff;
     transform: translateY(-1px);
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.5);
 }
 
 /* Hero Section */
@@ -113,12 +116,13 @@ button, .button, .btn {
     position: absolute;
     left: 0;
     top: 0;
-    width: 65%;
-    height: 630px; /* Extended height to match viewer */
-    opacity: 0.06;
+    width: 57%; /* Adjusted to align with "A" of About */
+    height: 630px;
+    opacity: 0.08;
     background-image: url("data:image/svg+xml,<svg style='stroke:rgb%28230, 230, 230%29; stroke-width: 0.5px;fill:none;'  id='Layer_12' data-name='Layer 12' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60.13 99.94'><path class='cls-1' d='m45.68,50.02l14.46-12.03v-.92l-20.34-16.89-8.79-7.38h29.12v-.68L45.65,0h-.84l-14.68,12.15L15.65,0l-.86.02,14.56,12.22H.52V.02H-.05v99.92h.57v-11.72l14.17,11.72h1.08l14.36-11.95,14.56,11.95h.89l-14.66-12.04h29.21v-.57h-29.22l29.22-24.37v-.82l-14.46-12.13Zm13.68-12.68h-28.84V13.2l8.89,7.44,19.95,16.69ZM29.95,13.12v24.21H.92L29.95,13.12Zm0,24.78v24.01l-14.27-11.89h0S.93,37.9.93,37.9h29.02Zm.57,24.9h28.84l-28.84,24.11v-24.11Zm-15.28-12.41l14.22,11.85H.92l14.31-11.85ZM1.01,62.8h28.94v24.11L1.01,62.8Zm58.34-.57h-28.84v-24.01l14.51,11.99,14.33,12.02Zm-14.12-12.59l-14.21-11.75h28.33l-14.12,11.75Zm0-49.26l14.22,11.85h-28.53L45.23.39Zm-15.88,12.42L.52,36.91V12.8h28.83Zm-14.56,37.22L.52,61.83v-23.53l14.27,11.72Zm14.57,37.32H.52v-24.13l28.84,24.13Zm-14.12,12.31l-14.21-11.75h28.33l-14.12,11.75Z'/></svg>");
     background-repeat: repeat;
-    background-size: 70px; /* Slightly bigger pattern */
+    background-size: 70px;
+    z-index: 1;
 }
 
 .geometric-pattern::after {
@@ -126,16 +130,28 @@ button, .button, .btn {
     position: absolute;
     right: 0;
     top: 0;
-    width: 25%;
-    height: 630px; /* Match the extended pattern height */
-    background: linear-gradient(to right, rgba(10, 10, 10, 0), rgba(10, 10, 10, 0.4), rgba(10, 10, 10, 1));
+    width: 25%; /* Smaller overlay for precise transition */
+    height: 630px;
+    background: linear-gradient(to right, 
+        rgba(10, 10, 10, 0) 0%, 
+        rgba(10, 10, 10, 0.1) 15%,
+        rgba(10, 10, 10, 0.2) 25%,
+        rgba(10, 10, 10, 0.3) 35%,
+        rgba(10, 10, 10, 0.4) 45%,
+        rgba(10, 10, 10, 0.5) 55%,
+        rgba(10, 10, 10, 0.6) 65%,
+        rgba(10, 10, 10, 0.7) 75%,
+        rgba(10, 10, 10, 0.8) 85%,
+        rgba(10, 10, 10, 1) 100%
+    );
     pointer-events: none;
+    z-index: 2;
 }
 
 .hero-content {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4rem;
+    grid-template-columns: 57% 43%; /* Adjusted to align with "A" of About */
+    gap: 0; /* No gap so viewport starts exactly where pattern ends */
     max-width: 1400px;
     margin: 0 auto;
     padding: 0 2rem;
@@ -145,31 +161,37 @@ button, .button, .btn {
 
 .hero-text {
     z-index: 10;
+    max-width: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Center everything including the button */
 }
 
 .hero-title {
     font-family: 'Sora', sans-serif;
-    font-size: 4rem;
+    font-size: 3.5rem;
     font-weight: 700;
-    line-height: 1.1;
+    line-height: 1.2;
     margin-bottom: 1.5rem;
     color: white;
+    text-align: center; /* Center the title text */
 }
 
 .hero-subtitle {
     font-family: 'Inter', sans-serif;
-    font-size: 1.25rem;
+    font-size: 1.1rem;
     color: rgba(255, 255, 255, 0.7);
     margin-bottom: 2.5rem;
     line-height: 1.6;
     font-weight: 400;
+    text-align: center; /* Center the subtitle text */
 }
 
 .cta-button {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
+    background: rgba(0, 188, 212, 0.1); /* Standard color is now the blue-like color */
+    color: #00bcd4; /* Text color matches border color */
     padding: 1rem 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 2px solid #00bcd4;
     border-radius: 8px;
     font-family: 'Sora', sans-serif;
     font-size: 1.1rem;
@@ -179,22 +201,28 @@ button, .button, .btn {
     text-decoration: none;
     display: inline-block;
     backdrop-filter: blur(10px);
+    box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
+    align-self: center; /* Center the button */
+    margin: 0 auto; /* Additional centering */
 }
 
 .cta-button:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: rgba(0, 188, 212, 0.1); /* Keep same background on hover */
+    border-color: #00e5ff;
+    color: white; /* Text becomes white on hover */
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(255, 255, 255, 0.1);
+    box-shadow: 0 0 20px rgba(0, 188, 212, 0.5);
 }
 
 .hero-3d {
-    height: 630px; /* Extended height to match pattern */
+    height: 630px;
     position: relative;
     border-radius: 12px;
     overflow: hidden;
-    background: linear-gradient(135deg, rgba(0, 188, 212, 0.05), rgba(0, 151, 167, 0.05));
+    background: transparent; /* Remove background so pattern shows through */
     z-index: 5;
+    border: none;
+    outline: none;
 }
 
 /* Assets Section */
@@ -265,30 +293,94 @@ button, .button, .btn {
     font-family: 'Inter', sans-serif;
 }
 
+/* Hamburger Menu */
+.hamburger {
+    display: none;
+    flex-direction: column;
+    cursor: pointer;
+    padding: 0.5rem;
+    gap: 4px;
+}
+
+.hamburger span {
+    width: 25px;
+    height: 3px;
+    background-color: #00bcd4;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+    box-shadow: 0 0 5px rgba(0, 188, 212, 0.3);
+}
+
+.hamburger.active span:nth-child(1) {
+    transform: rotate(45deg) translate(8px, 8px);
+}
+
+.hamburger.active span:nth-child(2) {
+    opacity: 0;
+}
+
+.hamburger.active span:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+}
+
+.mobile-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(0, 188, 212, 0.3);
+    border-radius: 8px;
+    margin: 1rem;
+    padding: 1rem;
+    box-shadow: 0 8px 32px rgba(0, 188, 212, 0.2);
+}
+
+.mobile-nav.active {
+    display: block;
+}
+
+.mobile-nav a {
+    display: block;
+    color: white;
+    text-decoration: none;
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    font-size: 1rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.mobile-nav a:hover {
+    color: #00bcd4;
+    padding-left: 1rem;
+}
+
+.mobile-nav a:last-child {
+    border-bottom: none;
+}
+
+.mobile-nav .account-btn {
+    margin-top: 1rem;
+    width: 100%;
+    text-align: center;
+}
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .header {
         padding: 1rem;
-        flex-direction: column;
-        gap: 1rem;
+        position: relative;
     }
 
     .nav {
-        flex-direction: column;
-        gap: 1.5rem;
-        max-width: none;
-        width: 100%;
+        display: none; /* Hide regular nav on mobile */
     }
 
-    .nav-left {
-        gap: 1rem;
-        flex-wrap: wrap;
-        justify-content: center;
-        margin-left: 0;
-    }
-
-    .nav-right {
-        margin-left: 0;
+    .hamburger {
+        display: flex; /* Show hamburger on mobile */
     }
 
     .hero-content {
