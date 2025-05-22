@@ -89,9 +89,18 @@ app.get('/api/health', (req, res) => {
 });
 
 // Import and use asset routes
-const assetRoutes = require('./routes/assets');
-app.use('/api/assets', assetRoutes);
+// Debug: Test route loading
+console.log('🔧 Testing asset routes loading...');
 
+try {
+  const assetRoutes = require('./routes/assets');
+  console.log('✅ Asset routes file loaded successfully');
+  app.use('/api/assets', assetRoutes);
+  console.log('✅ Asset routes mounted at /api/assets');
+} catch (error) {
+  console.error('❌ Error loading asset routes:', error.message);
+  console.error('Stack:', error.stack);
+}
 // Your existing Meshy functions (keeping them exactly the same)
 const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTexture = true, symmetryMode = 'auto', enablePBR = false, targetPolycount = 30000) => {
   const headers = { Authorization: `Bearer ${YOUR_API_KEY}` };

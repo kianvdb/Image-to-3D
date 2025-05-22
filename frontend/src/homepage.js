@@ -435,6 +435,7 @@ function onWindowResize() {
 // Asset Management Functions
 async function loadAssetsFromAPI() {
     try {
+        console.log('🔄 Loading assets from API...');
         const response = await fetch(`${API_BASE_URL}/assets?limit=8&sortBy=popularity&sortOrder=desc`);
         
         if (!response.ok) {
@@ -442,25 +443,47 @@ async function loadAssetsFromAPI() {
         }
         
         const data = await response.json();
+        console.log('✅ Assets loaded:', data.assets?.length || 0);
         return data.assets || [];
     } catch (error) {
-        console.error('Error loading assets:', error);
+        console.error('❌ Error loading assets:', error);
         return [];
     }
 }
 
+// Replace your createAssetCard function in homepage.js with this:
 function createAssetCard(asset) {
     const assetCard = document.createElement('div');
     assetCard.classList.add('asset-card');
     assetCard.setAttribute('data-asset-id', asset._id);
     
-    assetCard.innerHTML = `
-        <div class="asset-icon">${asset.icon || '🐕'}</div>
-        <h3 class="asset-name">${asset.name}</h3>
-        <div class="asset-stats">
-            <small>${asset.views || 0} views • ${asset.downloads || 0} downloads</small>
-        </div>
-    `;
+    // Use preview image if available, otherwise use icon
+    const hasPreviewImage = asset.previewImage && asset.previewImage.url;
+    
+    if (hasPreviewImage) {
+        // Use actual preview image
+        assetCard.innerHTML = `
+            <div class="asset-preview">
+                <img src="${asset.previewImage.url}" alt="${asset.name}" class="asset-preview-img">
+            </div>
+            <div class="asset-info">
+                <div class="asset-icon-small">${asset.icon || '🐕'}</div>
+                <h3 class="asset-name">${asset.name}</h3>
+                <div class="asset-stats">
+                    <small>${asset.views || 0} views • ${asset.downloads || 0} downloads</small>
+                </div>
+            </div>
+        `;
+    } else {
+        // Use emoji icon (fallback)
+        assetCard.innerHTML = `
+            <div class="asset-icon">${asset.icon || '🐕'}</div>
+            <h3 class="asset-name">${asset.name}</h3>
+            <div class="asset-stats">
+                <small>${asset.views || 0} views • ${asset.downloads || 0} downloads</small>
+            </div>
+        `;
+    }
     
     // Add click handler for asset interaction
     assetCard.addEventListener('click', () => {
@@ -477,7 +500,7 @@ async function handleAssetClick(asset) {
             method: 'GET'
         });
         
-        // Show asset details or download options
+        // Show asset details
         showAssetModal(asset);
     } catch (error) {
         console.error('Error handling asset click:', error);
@@ -528,12 +551,14 @@ async function renderAssetsSection() {
     const assetsGrid = document.querySelector('.assets-grid');
     
     if (!assetsGrid) {
-        console.warn('Assets grid not found');
+        console.warn('❌ Assets grid not found in HTML');
         return;
     }
     
+    console.log('🔄 Rendering assets section...');
+    
     // Show loading state
-    assetsGrid.innerHTML = '<div class="loading-assets">Loading assets...</div>';
+    assetsGrid.innerHTML = '<div class="loading-assets">Loading your assets...</div>';
     
     try {
         const assets = await loadAssetsFromAPI();
@@ -542,9 +567,16 @@ async function renderAssetsSection() {
         assetsGrid.innerHTML = '';
         
         if (assets.length === 0) {
-            assetsGrid.innerHTML = '<div class="no-assets">No assets available yet. Check back soon!</div>';
+            assetsGrid.innerHTML = `
+                <div class="no-assets">
+                    <p>No assets available yet.</p>
+                    <p><a href="/manageAssets.html" style="color: #00bcd4;">Create your first asset →</a></p>
+                </div>
+            `;
             return;
         }
+        
+        console.log(`✅ Rendering ${assets.length} assets`);
         
         // Create asset cards
         assets.forEach(asset => {
@@ -553,18 +585,29 @@ async function renderAssetsSection() {
         });
         
     } catch (error) {
-        console.error('Error rendering assets:', error);
-        assetsGrid.innerHTML = '<div class="error-assets">Error loading assets. Please try again later.</div>';
+        console.error('❌ Error rendering assets:', error);
+        assetsGrid.innerHTML = `
+            <div class="error-assets">
+                <p>Error loading assets. Please try again later.</p>
+                <button onclick="renderAssetsSection()" style="background: #00bcd4; color: white; border: none; padding: 8px 16px; border-radius: 4px; margin-top: 10px; cursor: pointer;">
+                    Retry
+                </button>
+            </div>
+        `;
     }
 }
 
 // Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Homepage initializing...');
+    
     // Initialize 3D scene
     init3D();
     
     // Load and render assets
     renderAssetsSection();
+    
+    console.log('✅ Homepage initialized');
 });
 
 // Smooth scrolling for anchor links

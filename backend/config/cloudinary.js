@@ -13,8 +13,7 @@ const modelStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'dalma-ai/models',
-    allowed_formats: ['glb', 'gltf'],
-    resource_type: 'raw',
+    resource_type: 'raw', // Important: raw allows any file type
     public_id: (req, file) => {
       const timestamp = Date.now();
       const originalName = file.originalname.split('.')[0];
@@ -23,13 +22,13 @@ const modelStorage = new CloudinaryStorage({
   },
 });
 
-// Storage for preview images
+// Storage for preview images - FIXED VERSION
 const imageStorage = new CloudinaryStorage({
   cloudinary: cloudinary,
   params: {
     folder: 'dalma-ai/previews',
-    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
     resource_type: 'image',
+    // Remove allowed_formats to be more permissive
     transformation: [
       { width: 800, height: 600, crop: 'limit' },
       { quality: 'auto' },
