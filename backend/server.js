@@ -33,6 +33,7 @@ const createPreviewTask = async (imageBase64, topology = 'triangle', shouldTextu
 
   const payload = {
     image_url: imageBase64,
+    image_url: imageBase64,
     ai_model: 'meshy-4',
     topology,
     target_polycount: targetPolycount,

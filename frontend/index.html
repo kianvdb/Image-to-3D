@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<<<<<<< Updated upstream
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Image-to-3D Model Generator</title>
@@ -8,11 +9,21 @@
 
   <!-- Favicon toevoegen -->
   <link rel="icon" href="/dalmalogo2.png" type="image/x-icon" />
+=======
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Model Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+>>>>>>> Stashed changes
 </head>
 <body>
   <div class="container">
     <h1>3D Model Generator</h1>
 
+<<<<<<< Updated upstream
     <!-- Image Upload -->
     <input type="file" id="imageInput" accept="image/*"/>
  <!-- Symmetry Buttons -->
@@ -76,5 +87,22 @@
   </div>
 
   <script type="module" src="/src/main.js"></script>
+=======
+    <!-- Div voor 3D-model weergave -->
+    <div id="viewer" style="width: 600px; height: 400px;"></div>
+
+    <script type="module">
+        import { generateModel } from "./js/main.js";  
+        window.generateModel = generateModel;  
+
+        // Update progress bar op basis van de modelstatus
+        window.updateProgressBar = function(percentage) {
+            const progressBar = document.getElementById('progressBar');
+            if (progressBar) {
+                progressBar.value = percentage;
+            }
+        };
+    </script>
+>>>>>>> Stashed changes
 </body>
 </html>

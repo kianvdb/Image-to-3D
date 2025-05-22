@@ -1,0 +1,281 @@
+* {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #0a0a0a;
+            color: white;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1200px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 20px auto;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: white;
+            margin-bottom: 30px;
+            text-align: center;
+            font-family: 'Sora', sans-serif;
+            font-size: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: white;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #00bcd4;
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
+        }
+
+        .form-group textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        button {
+            background: rgba(0, 188, 212, 0.1);
+            color: #00bcd4;
+            border: 2px solid #00bcd4;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-family: 'Sora', sans-serif;
+            font-weight: 600;
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 0 10px rgba(0, 188, 212, 0.3);
+        }
+
+        button:hover {
+            background: rgba(0, 188, 212, 0.2);
+            border-color: #00e5ff;
+            box-shadow: 0 0 20px rgba(0, 188, 212, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .delete-asset {
+            background: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border-color: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        }
+
+        .delete-asset:hover {
+            background: rgba(220, 53, 69, 0.2);
+            border-color: #ff6b7a;
+            box-shadow: 0 0 20px rgba(220, 53, 69, 0.5);
+        }
+
+        .asset-side {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .asset-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            overflow: hidden;
+            padding: 20px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .asset-item:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(0, 188, 212, 0.3);
+        }
+
+        .asset-preview {
+            width: 100%;
+            height: 200px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .asset-info {
+            flex: 1;
+        }
+
+        .asset-info h3 {
+            margin: 0 0 10px 0;
+            color: white;
+            font-size: 1.5rem;
+            font-family: 'Sora', sans-serif;
+            font-weight: 600;
+        }
+
+        .asset-info p {
+            margin: 8px 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .asset-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 15px 0;
+        }
+
+        .asset-tag {
+            background: rgba(0, 188, 212, 0.2);
+            color: #00bcd4;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .asset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .asset-buttons button {
+            flex: 1;
+            margin-top: 0;
+            padding: 10px;
+        }
+
+        .message {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(0, 188, 212, 0.1);
+            color: #00bcd4;
+            border: 1px solid rgba(0, 188, 212, 0.3);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+        }
+
+        .adminNav {
+            width: 90%;
+            max-width: 1200px;
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            justify-content: space-between;
+            margin: 0 auto;
+        }
+
+        .adminNav a {
+            color: white;
+            text-decoration: none;
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .adminNav a:hover {
+            color: #00bcd4;
+        }
+
+        .adminNav img {
+            height: 40px;
+            width: auto;
+        }
+
+        .file-upload-area {
+            border: 2px dashed rgba(0, 188, 212, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            background: rgba(0, 188, 212, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .file-upload-area:hover {
+            border-color: #00bcd4;
+            background: rgba(0, 188, 212, 0.1);
+        }
+
+        .file-upload-area input[type="file"] {
+            background: transparent;
+            border: none;
+            padding: 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+                margin: 10px;
+                width: calc(100% - 20px);
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .asset-side {
+                grid-template-columns: 1fr;
+            }
+
+            .asset-buttons {
+                flex-direction: column;
+            }
+
+            .adminNav {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
