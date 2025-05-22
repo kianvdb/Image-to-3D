@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="manageAssets.css" />
+    <link rel="stylesheet" href="manageAssets.css" />
 </head>
 <body>
     <div class="adminNav">
@@ -37,22 +37,22 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="icon">Icon/Emoji</label>
-                    <input type="text" id="icon" name="icon" required placeholder="🐕" maxlength="2">
+                    <input type="text" id="icon" name="icon" required placeholder="🐕" maxlength="10">
                 </div>
                 <div class="form-group">
                     <label for="fileSize">Bestandsgrootte</label>
-                    <input type="text" id="fileSize" name="fileSize" required placeholder="bv. 2.5 MB">
+                    <input type="text" id="fileSize" name="fileSize" placeholder="bv. 2.5 MB (automatisch berekend)">
                 </div>
             </div>
 
             <div class="form-row">
                 <div class="form-group">
                     <label for="polygons">Aantal Polygonen</label>
-                    <input type="number" id="polygons" name="polygons" required placeholder="15000">
+                    <input type="number" id="polygons" name="polygons" required placeholder="15000" min="100" max="1000000">
                 </div>
                 <div class="form-group">
                     <label for="popularity">Populariteit (0-100)</label>
-                    <input type="number" max="100" min="0" id="popularity" name="popularity" required placeholder="85">
+                    <input type="number" max="100" min="0" id="popularity" name="popularity" placeholder="0" value="0">
                 </div>
             </div>
 
@@ -82,121 +82,150 @@
                 </div>
             </div>
 
-            <button type="submit">Maak het asset aan</button>
+            <button type="submit" id="submitBtn">Maak het asset aan</button>
         </form>
         <div id="message" class="message" style="display: none;"></div>
+        <div id="loadingSpinner" class="loading-spinner" style="display: none;">
+            <i class="fas fa-spinner fa-spin"></i> Uploading...
+        </div>
     </div>
 
     <div class="container asset-side" id="assetContainer">
-        <!-- Assets will be loaded here -->
+        <div class="loading-message">
+            <i class="fas fa-spinner fa-spin"></i> Loading assets...
+        </div>
     </div>
 
     <script>
+        // Configuration
+        const API_BASE_URL = 'http://localhost:3000/api';
         let editingAssetId = null;
         let assetsData = [];
 
-        // Sample data for demonstration
-        const sampleAssets = [
-            {
-                _id: '1',
-                name: 'Labrador Retriever',
-                breed: 'Labrador Retriever',
-                icon: '🐕',
-                fileSize: '2.3 MB',
-                polygons: 12500,
-                tags: ['friendly', 'realistic', 'textured'],
-                description: 'High-quality Labrador model with realistic textures and animations',
-                popularity: 95,
-                dateAdded: '2024-01-15',
-                modelFile: 'labrador.glb',
-                previewImage: null
-            },
-            {
-                _id: '2',
-                name: 'German Shepherd',
-                breed: 'German Shepherd',
-                icon: '🐺',
-                fileSize: '3.1 MB',
-                polygons: 18000,
-                tags: ['guard', 'detailed', 'animated'],
-                description: 'Detailed German Shepherd with guard animations and realistic fur',
-                popularity: 88,
-                dateAdded: '2024-01-10',
-                modelFile: 'german_shepherd.glb',
-                previewImage: null
-            },
-            {
-                _id: '3',
-                name: 'Beagle',
-                breed: 'Beagle',
-                icon: '🐶',
-                fileSize: '1.8 MB',
-                polygons: 9500,
-                tags: ['small', 'cute', 'low-poly'],
-                description: 'Adorable Beagle perfect for mobile applications and games',
-                popularity: 92,
-                dateAdded: '2024-01-20',
-                modelFile: 'beagle.glb',
-                previewImage: null
-            },
-            {
-                _id: '4',
-                name: 'English Bulldog',
-                breed: 'English Bulldog',
-                icon: '🐕‍🦺',
-                fileSize: '2.7 MB',
-                polygons: 14200,
-                tags: ['sturdy', 'character', 'textured'],
-                description: 'Characterful Bulldog with detailed facial features and expressions',
-                popularity: 76,
-                dateAdded: '2024-01-05',
-                modelFile: 'bulldog.glb',
-                previewImage: null
-            }
-        ];
-
+        // Fetch assets from the API
         async function fetchAssets() {
             try {
-                // In a real application, this would fetch from your API
-                // const response = await fetch('https://your-api.com/api/assets');
-                // const assets = await response.json();
+                showLoadingMessage(true);
+                const response = await fetch(`${API_BASE_URL}/assets`);
                 
-                // For now, use sample data
-                const assets = sampleAssets;
-                assetsData = assets;
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 
-                const assetContainer = document.getElementById('assetContainer');
-                assetContainer.innerHTML = '';
+                const data = await response.json();
+                assetsData = data.assets || [];
                 
-                assets.forEach(asset => {
-                    const assetElement = document.createElement('div');
-                    assetElement.classList.add('asset-item');
-                    
-                    assetElement.innerHTML = `
-                        <div class="asset-preview">
-                            ${asset.icon}
-                        </div>
-                        <div class="asset-info">
-                            <h3>${asset.name}</h3>
-                            <p><strong>Ras:</strong> ${asset.breed}</p>
-                            <p><strong>Bestandsgrootte:</strong> ${asset.fileSize}</p>
-                            <p><strong>Polygonen:</strong> ${asset.polygons.toLocaleString()}</p>
-                            <p><strong>Populariteit:</strong> ${asset.popularity}%</p>
-                            <p><strong>Beschrijving:</strong> ${asset.description}</p>
-                            <div class="asset-tags">
-                                ${asset.tags.map(tag => `<span class="asset-tag">${tag}</span>`).join('')}
-                            </div>
-                            <div class="asset-buttons">
-                                <button class="edit-asset" data-id="${asset._id}">Bewerk</button>
-                                <button class="delete-asset" data-id="${asset._id}">Verwijder</button>
-                            </div>
-                        </div>
-                    `;
-                    assetContainer.appendChild(assetElement);
-                });
+                displayAssets(assetsData);
+                showLoadingMessage(false);
+                
+                if (assetsData.length === 0) {
+                    showMessage('Geen assets gevonden. Maak je eerste asset aan!', 'info');
+                }
             } catch (error) {
                 console.error('Error fetching assets:', error);
                 showMessage('Fout bij het laden van assets: ' + error.message, 'error');
+                showLoadingMessage(false);
+                
+                // Show empty state
+                const assetContainer = document.getElementById('assetContainer');
+                assetContainer.innerHTML = '<div class="empty-state">Kon assets niet laden. Controleer je internetverbinding.</div>';
+            }
+        }
+
+        function showLoadingMessage(show) {
+            const container = document.getElementById('assetContainer');
+            if (show) {
+                container.innerHTML = '<div class="loading-message"><i class="fas fa-spinner fa-spin"></i> Loading assets...</div>';
+            }
+        }
+
+        function displayAssets(assets) {
+            const assetContainer = document.getElementById('assetContainer');
+            assetContainer.innerHTML = '';
+            
+            if (assets.length === 0) {
+                assetContainer.innerHTML = '<div class="empty-state">Nog geen assets. Maak je eerste asset aan!</div>';
+                return;
+            }
+            
+            assets.forEach(asset => {
+                const assetElement = document.createElement('div');
+                assetElement.classList.add('asset-item');
+                
+                // Format file size
+                const fileSize = asset.fileSize || 'Onbekend';
+                
+                // Format date
+                const createdDate = asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('nl-NL') : 'Onbekend';
+                
+                assetElement.innerHTML = `
+                    <div class="asset-preview">
+                        ${asset.icon || '🐕'}
+                    </div>
+                    <div class="asset-info">
+                        <h3>${asset.name}</h3>
+                        <p><strong>Ras:</strong> ${asset.breed}</p>
+                        <p><strong>Bestandsgrootte:</strong> ${fileSize}</p>
+                        <p><strong>Polygonen:</strong> ${asset.polygons?.toLocaleString() || '0'}</p>
+                        <p><strong>Populariteit:</strong> ${asset.popularity || 0}%</p>
+                        <p><strong>Views:</strong> ${asset.views || 0}</p>
+                        <p><strong>Downloads:</strong> ${asset.downloads || 0}</p>
+                        <p><strong>Aangemaakt:</strong> ${createdDate}</p>
+                        <p><strong>Beschrijving:</strong> ${asset.description}</p>
+                        <div class="asset-tags">
+                            ${(asset.tags || []).map(tag => `<span class="asset-tag">${tag}</span>`).join('')}
+                        </div>
+                        <div class="asset-buttons">
+                            <button class="edit-asset" data-id="${asset._id}">Bewerk</button>
+                            <button class="delete-asset" data-id="${asset._id}">Verwijder</button>
+                            ${asset.modelFile?.url ? `<a href="${asset.modelFile.url}" target="_blank" class="download-asset">Download</a>` : ''}
+                        </div>
+                    </div>
+                `;
+                assetContainer.appendChild(assetElement);
+            });
+        }
+
+        // Create or update asset
+        async function saveAsset(formData, isEdit = false) {
+            try {
+                const url = isEdit ? `${API_BASE_URL}/assets/${editingAssetId}` : `${API_BASE_URL}/assets`;
+                const method = isEdit ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                return result;
+            } catch (error) {
+                console.error('Error saving asset:', error);
+                throw error;
+            }
+        }
+
+        // Delete asset
+        async function deleteAsset(assetId) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/assets/${assetId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error deleting asset:', error);
+                throw error;
             }
         }
 
@@ -205,10 +234,17 @@
             messageDiv.textContent = text;
             messageDiv.style.display = 'block';
             
+            // Reset classes
+            messageDiv.className = 'message';
+            
             if (type === 'error') {
                 messageDiv.style.background = 'rgba(220, 53, 69, 0.1)';
                 messageDiv.style.color = '#dc3545';
                 messageDiv.style.borderColor = 'rgba(220, 53, 69, 0.3)';
+            } else if (type === 'info') {
+                messageDiv.style.background = 'rgba(255, 193, 7, 0.1)';
+                messageDiv.style.color = '#ffc107';
+                messageDiv.style.borderColor = 'rgba(255, 193, 7, 0.3)';
             } else {
                 messageDiv.style.background = 'rgba(0, 188, 212, 0.1)';
                 messageDiv.style.color = '#00bcd4';
@@ -220,97 +256,189 @@
             }, 5000);
         }
 
+        function showLoading(show) {
+            const spinner = document.getElementById('loadingSpinner');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (show) {
+                spinner.style.display = 'block';
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Uploading...';
+            } else {
+                spinner.style.display = 'none';
+                submitBtn.disabled = false;
+                submitBtn.textContent = editingAssetId ? 'Werk het asset bij' : 'Maak het asset aan';
+            }
+        }
+
         function resetForm() {
             document.getElementById('assetForm').reset();
             editingAssetId = null;
-            document.querySelector('button[type="submit"]').textContent = 'Maak het asset aan';
+            document.getElementById('submitBtn').textContent = 'Maak het asset aan';
         }
 
+        function populateFormForEdit(asset) {
+            document.getElementById('name').value = asset.name || '';
+            document.getElementById('breed').value = asset.breed || '';
+            document.getElementById('icon').value = asset.icon || '';
+            document.getElementById('fileSize').value = asset.fileSize || '';
+            document.getElementById('polygons').value = asset.polygons || '';
+            document.getElementById('popularity').value = asset.popularity || 0;
+            document.getElementById('tags').value = (asset.tags || []).join(', ');
+            document.getElementById('description').value = asset.description || '';
+
+            editingAssetId = asset._id;
+            document.getElementById('submitBtn').textContent = 'Werk het asset bij';
+            
+            // Make model file optional for editing
+            document.getElementById('modelFile').removeAttribute('required');
+            
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Event Listeners
         document.addEventListener('DOMContentLoaded', () => {
             const assetForm = document.getElementById('assetForm');
 
+            // Form submission
             assetForm.addEventListener('submit', async (event) => {
                 event.preventDefault();
-
-                const formData = new FormData(assetForm);
                 
-                // Convert form data to object
-                const assetData = {
-                    name: formData.get('name'),
-                    breed: formData.get('breed'),
-                    icon: formData.get('icon'),
-                    fileSize: formData.get('fileSize'),
-                    polygons: parseInt(formData.get('polygons')),
-                    popularity: parseInt(formData.get('popularity')),
-                    tags: formData.get('tags').split(',').map(tag => tag.trim()),
-                    description: formData.get('description'),
-                    modelFile: formData.get('modelFile').name,
-                    previewImage: formData.get('previewImage').name || null,
-                    dateAdded: new Date().toISOString().split('T')[0]
-                };
-
+                showLoading(true);
+                
                 try {
-                    if (editingAssetId) {
-                        // Update existing asset
-                        const assetIndex = assetsData.findIndex(a => a._id === editingAssetId);
-                        if (assetIndex !== -1) {
-                            assetsData[assetIndex] = { ...assetsData[assetIndex], ...assetData };
-                            showMessage('Asset succesvol bijgewerkt!');
+                    const formData = new FormData(assetForm);
+                    
+                    // Validate required fields
+                    const requiredFields = ['name', 'breed', 'icon', 'polygons', 'description'];
+                    for (const field of requiredFields) {
+                        if (!formData.get(field)) {
+                            throw new Error(`${field} is verplicht`);
                         }
+                    }
+                    
+                    // Check if model file is provided for new assets
+                    if (!editingAssetId && !formData.get('modelFile').name) {
+                        throw new Error('Model bestand is verplicht voor nieuwe assets');
+                    }
+
+                    const result = await saveAsset(formData, !!editingAssetId);
+                    
+                    if (editingAssetId) {
+                        showMessage('Asset succesvol bijgewerkt!');
                     } else {
-                        // Create new asset
-                        const newAsset = {
-                            _id: Date.now().toString(),
-                            ...assetData
-                        };
-                        assetsData.push(newAsset);
                         showMessage('Asset succesvol aangemaakt!');
                     }
 
                     resetForm();
-                    fetchAssets();
+                    await fetchAssets(); // Refresh the list
+                    
                 } catch (error) {
                     showMessage('Fout bij het opslaan: ' + error.message, 'error');
+                } finally {
+                    showLoading(false);
                 }
             });
 
             // Handle edit and delete buttons
             document.getElementById('assetContainer').addEventListener('click', async (event) => {
-                if (event.target.classList.contains('edit-asset')) {
-                    const assetId = event.target.dataset.id;
+                const target = event.target;
+                
+                if (target.classList.contains('edit-asset')) {
+                    const assetId = target.dataset.id;
                     const asset = assetsData.find(a => a._id === assetId);
                     
                     if (asset) {
-                        window.scrollTo(0, 0);
-
-                        document.getElementById('name').value = asset.name;
-                        document.getElementById('breed').value = asset.breed;
-                        document.getElementById('icon').value = asset.icon;
-                        document.getElementById('fileSize').value = asset.fileSize;
-                        document.getElementById('polygons').value = asset.polygons;
-                        document.getElementById('popularity').value = asset.popularity;
-                        document.getElementById('tags').value = asset.tags.join(', ');
-                        document.getElementById('description').value = asset.description;
-
-                        editingAssetId = assetId;
-                        document.querySelector('button[type="submit"]').textContent = 'Werk het asset bij';
+                        populateFormForEdit(asset);
                     }
-                } else if (event.target.classList.contains('delete-asset')) {
-                    const assetId = event.target.dataset.id;
+                } else if (target.classList.contains('delete-asset')) {
+                    const assetId = target.dataset.id;
+                    const asset = assetsData.find(a => a._id === assetId);
                     
-                    if (confirm('Weet je zeker dat je dit asset wilt verwijderen?')) {
-                        const assetIndex = assetsData.findIndex(a => a._id === assetId);
-                        if (assetIndex !== -1) {
-                            assetsData.splice(assetIndex, 1);
+                    if (confirm(`Weet je zeker dat je "${asset?.name || 'dit asset'}" wilt verwijderen?`)) {
+                        try {
+                            await deleteAsset(assetId);
                             showMessage('Asset succesvol verwijderd!');
-                            fetchAssets();
+                            await fetchAssets(); // Refresh the list
+                        } catch (error) {
+                            showMessage('Fout bij het verwijderen: ' + error.message, 'error');
                         }
                     }
                 }
             });
 
+            // Auto-calculate file size when file is selected
+            document.getElementById('modelFile').addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    const sizeInMB = (file.size / (1024 * 1024)).toFixed(1);
+                    document.getElementById('fileSize').value = `${sizeInMB} MB`;
+                }
+            });
+
+            // Load assets on page load
             fetchAssets();
         });
     </script>
+
+    <style>
+        .loading-spinner {
+            text-align: center;
+            padding: 20px;
+            color: #00bcd4;
+            font-size: 1.1rem;
+        }
+
+        .loading-message {
+            text-align: center;
+            padding: 40px;
+            color: #00bcd4;
+            font-size: 1.1rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.6);
+            font-style: italic;
+        }
+
+        .download-asset {
+            background: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 2px solid #28a745;
+            padding: 10px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            transition: all 0.3s ease;
+            margin-top: 0;
+        }
+
+        .download-asset:hover {
+            background: rgba(40, 167, 69, 0.2);
+            border-color: #34ce57;
+            transform: translateY(-1px);
+        }
+
+        .asset-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .asset-buttons > * {
+            flex: 1;
+            min-width: 80px;
+        }
+
+        #submitBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
 </body>
 </html>

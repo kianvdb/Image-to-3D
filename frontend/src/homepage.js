@@ -6,6 +6,9 @@ let isTransitioning = false;
 let lastInteraction = 0;
 let autoRotateTimeout;
 
+// API Configuration
+const API_BASE_URL = 'http://localhost:3000/api';
+
 // Timing constants
 const DISPLAY_TIME = 3000; // 3 seconds
 const TRANSITION_TIME = 1000; // 1 second
@@ -429,9 +432,139 @@ function onWindowResize() {
     renderer.setSize(container.clientWidth, container.clientHeight);
 }
 
-// Initialize 3D scene when page loads
+// Asset Management Functions
+async function loadAssetsFromAPI() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/assets?limit=8&sortBy=popularity&sortOrder=desc`);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        return data.assets || [];
+    } catch (error) {
+        console.error('Error loading assets:', error);
+        return [];
+    }
+}
+
+function createAssetCard(asset) {
+    const assetCard = document.createElement('div');
+    assetCard.classList.add('asset-card');
+    assetCard.setAttribute('data-asset-id', asset._id);
+    
+    assetCard.innerHTML = `
+        <div class="asset-icon">${asset.icon || '🐕'}</div>
+        <h3 class="asset-name">${asset.name}</h3>
+        <div class="asset-stats">
+            <small>${asset.views || 0} views • ${asset.downloads || 0} downloads</small>
+        </div>
+    `;
+    
+    // Add click handler for asset interaction
+    assetCard.addEventListener('click', () => {
+        handleAssetClick(asset);
+    });
+    
+    return assetCard;
+}
+
+async function handleAssetClick(asset) {
+    try {
+        // Increment views
+        await fetch(`${API_BASE_URL}/assets/${asset._id}`, {
+            method: 'GET'
+        });
+        
+        // Show asset details or download options
+        showAssetModal(asset);
+    } catch (error) {
+        console.error('Error handling asset click:', error);
+    }
+}
+
+function showAssetModal(asset) {
+    // Create a simple modal to show asset details
+    const modal = document.createElement('div');
+    modal.classList.add('asset-modal');
+    modal.innerHTML = `
+        <div class="asset-modal-content">
+            <span class="asset-modal-close">&times;</span>
+            <h2>${asset.name}</h2>
+            <div class="asset-modal-info">
+                <p><strong>Breed:</strong> ${asset.breed}</p>
+                <p><strong>File Size:</strong> ${asset.fileSize || 'Unknown'}</p>
+                <p><strong>Polygons:</strong> ${asset.polygons?.toLocaleString() || '0'}</p>
+                <p><strong>Description:</strong> ${asset.description}</p>
+                <div class="asset-tags">
+                    ${(asset.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
+                </div>
+                ${asset.modelFile?.url ? `
+                    <div class="asset-actions">
+                        <a href="${asset.modelFile.url}" target="_blank" class="download-btn">Download Model</a>
+                    </div>
+                ` : ''}
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    
+    // Close modal handlers
+    const closeBtn = modal.querySelector('.asset-modal-close');
+    closeBtn.addEventListener('click', () => {
+        document.body.removeChild(modal);
+    });
+    
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            document.body.removeChild(modal);
+        }
+    });
+}
+
+async function renderAssetsSection() {
+    const assetsGrid = document.querySelector('.assets-grid');
+    
+    if (!assetsGrid) {
+        console.warn('Assets grid not found');
+        return;
+    }
+    
+    // Show loading state
+    assetsGrid.innerHTML = '<div class="loading-assets">Loading assets...</div>';
+    
+    try {
+        const assets = await loadAssetsFromAPI();
+        
+        // Clear loading state
+        assetsGrid.innerHTML = '';
+        
+        if (assets.length === 0) {
+            assetsGrid.innerHTML = '<div class="no-assets">No assets available yet. Check back soon!</div>';
+            return;
+        }
+        
+        // Create asset cards
+        assets.forEach(asset => {
+            const assetCard = createAssetCard(asset);
+            assetsGrid.appendChild(assetCard);
+        });
+        
+    } catch (error) {
+        console.error('Error rendering assets:', error);
+        assetsGrid.innerHTML = '<div class="error-assets">Error loading assets. Please try again later.</div>';
+    }
+}
+
+// Initialize everything when page loads
 document.addEventListener('DOMContentLoaded', function() {
+    // Initialize 3D scene
     init3D();
+    
+    // Load and render assets
+    renderAssetsSection();
 });
 
 // Smooth scrolling for anchor links
