@@ -1,12 +1,3 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { createModel, getModelStatus } from './api.js';
-import { detectRelevantObjects, enableDetection } from './objectDetection.js';
-import { initFlow, showDownloadButtons } from './flow.js';
-import { dogFacts } from './dogfacts.js';
-import gsap from "gsap";
-
 
 
 let scene, camera, renderer, controls, model;
@@ -20,12 +11,9 @@ let dogFactOverlay;
 let factInterval;
 let factIndex = 0;
 
-// Move the dogFactOverlay initialization inside DOMContentLoaded
-// This ensures the DOM is fully loaded before trying to access elements
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
-
 
     initFlow();
     initScene();
@@ -113,8 +101,8 @@ function initScene() {
     gridHelper.position.y = -0.95;
     scene.add(gridHelper);
 
-    // Orbit controls
-    controls = new OrbitControls(camera, renderer.domElement);
+    // Orbit controls - use the global THREE.OrbitControls
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.target.set(0, 1, 0);
     controls.update();
 
@@ -265,14 +253,6 @@ function updateProgress(percent) {
     }
 }
 
-// Fix for the dogFactOverlay issue
-
-// Make these changes to your main.js file:
-
-// 1. Remove this line from inside the DOMContentLoaded event listener:
-// dogFactOverlay = document.getElementById('dogFactOverlay');
-
-// 2. Replace your startDogFacts() function with this implementation:
 function startDogFacts() {
   if (!dogFacts || !dogFacts.length) {
     console.warn("⚠️ dogFacts array is leeg of niet gedefinieerd.");
@@ -313,7 +293,6 @@ function startDogFacts() {
   }, 5000);
 }
 
-// 3. Also update the stopDogFacts() function:
 function stopDogFacts() {
   console.log("⏹️ stopDogFacts() gestart.");
   
@@ -338,7 +317,7 @@ function stopDogFacts() {
   }
 }
 
-export async function generateModel() {
+async function generateModel() {
     const imageInput = document.getElementById("imageInput");
     const file = imageInput?.files[0];
     if (!file) {
@@ -454,7 +433,7 @@ function startPolling(taskId) {
                 showSpinner(false);
                 showDownloadButtons();
                 stopDogFacts();
-                const success = await loadModel(`/api/proxyModel/${taskId}?format=glb`);
+                const success = await loadModel(`http://localhost:3000/api/proxyModel/${taskId}?format=glb`);
                 await statusMessage(success ? "✅ Model succesvol geladen!" : "❌ Kon model niet laden.");
                 return;
             }
@@ -483,7 +462,7 @@ async function loadModel(url) {
         }
 
         const arrayBuffer = await response.arrayBuffer();
-        const loader = new GLTFLoader();
+        const loader = new THREE.GLTFLoader();
 
         return new Promise((resolve) => {
             loader.parse(arrayBuffer, '', (gltf) => {
@@ -498,21 +477,9 @@ async function loadModel(url) {
 
                 scene.add(model);
 
-                // 🌀 Animeer schaal van klein naar normaal
-                gsap.to(model.scale, {
-                    x: 1,
-                    y: 1,
-                    z: 1,
-                    duration: 2,
-                    ease: "power2.out"
-                });
-
-                // 🔄 Roteer 360° tijdens laden
-                gsap.to(model.rotation, {
-                    y: Math.PI * 2,
-                    duration: 2.5,
-                    ease: "power2.out"
-                });
+                // 🌀 Animeer schaal van klein naar normaal - use basic animation instead of GSAP
+                animateScale(model);
+                animateRotation(model);
 
                 // 🔍 Smooth camera-zoom naar het model
                 frameModel(model);
@@ -529,6 +496,50 @@ async function loadModel(url) {
     }
 }
 
+// Simple animation functions to replace GSAP
+function animateScale(model) {
+    const startTime = Date.now();
+    const duration = 2000; // 2 seconds
+    
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (power2.out equivalent)
+        const eased = 1 - Math.pow(1 - progress, 2);
+        
+        const scale = 0.01 + (1 - 0.01) * eased;
+        model.scale.set(scale, scale, scale);
+        
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+    
+    animate();
+}
+
+function animateRotation(model) {
+    const startTime = Date.now();
+    const duration = 2500; // 2.5 seconds
+    
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function (power2.out equivalent)
+        const eased = 1 - Math.pow(1 - progress, 2);
+        
+        model.rotation.y = Math.PI * 2 * eased;
+        
+        if (progress < 1) {
+            requestAnimationFrame(animate);
+        }
+    }
+    
+    animate();
+}
+
 function frameModel(model) {
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
@@ -536,9 +547,8 @@ function frameModel(model) {
 
     const maxDim = Math.max(size.x, size.y, size.z);
     const fov = camera.fov * (Math.PI / 180);
-let targetDistance = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
-targetDistance = Math.max(targetDistance, 5); // 📏 minimaal 3 eenheden afstand
-
+    let targetDistance = (maxDim / 2) / Math.tan(fov / 2) * 1.6;
+    targetDistance = Math.max(targetDistance, 5); // 📏 minimaal 5 eenheden afstand
 
     const newPos = {
         x: center.x,
@@ -546,27 +556,38 @@ targetDistance = Math.max(targetDistance, 5); // 📏 minimaal 3 eenheden afstan
         z: center.z + targetDistance,
     };
 
-    // 🌠 Smooth animatie met GSAP
-    gsap.to(camera.position, {
-        duration: 2,
-        x: newPos.x,
-        y: newPos.y,
-        z: newPos.z,
-        ease: "power2.out",
-        onUpdate: () => {
-            camera.lookAt(center);
-            controls.target.copy(center);
-            controls.update();
+    // Simple camera animation instead of GSAP
+    const startTime = Date.now();
+    const duration = 2000;
+    const startPos = { ...camera.position };
+    
+    function animate() {
+        const elapsed = Date.now() - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        
+        // Easing function
+        const eased = 1 - Math.pow(1 - progress, 2);
+        
+        camera.position.x = startPos.x + (newPos.x - startPos.x) * eased;
+        camera.position.y = startPos.y + (newPos.y - startPos.y) * eased;
+        camera.position.z = startPos.z + (newPos.z - startPos.z) * eased;
+        
+        camera.lookAt(center);
+        controls.target.copy(center);
+        controls.update();
+        
+        if (progress < 1) {
+            requestAnimationFrame(animate);
         }
-    });
+    }
+    
+    animate();
 }
-
-
 
 showDownloadButtons();
 
 function downloadModel(format = 'glb') {
-    const downloadUrl = `/api/proxyModel/${currentTaskId}?format=${format}`;
+    const downloadUrl = `http://localhost:3000/api/proxyModel/${currentTaskId}?format=${format}`;
     const filename = `model.${format}`;
     downloadFile(downloadUrl, filename);
 }

@@ -9,11 +9,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="manageAssets.css" />
+    <link rel="icon" href="public/favicon.png" type="image/png">
 </head>
 <body>
     <div class="adminNav">
         <a href="homepage.html">
-            <img src="/frontend/public/logo2dalma.png" alt="DALMA AI">
+            <img src="public/logo2dalma.png" alt="DALMA AI">
         </a>
         <a href="homepage.html">
             Terug naar homepage <i class="fas fa-long-arrow-right"></i>
@@ -139,52 +140,75 @@
             }
         }
 
-        function displayAssets(assets) {
-            const assetContainer = document.getElementById('assetContainer');
-            assetContainer.innerHTML = '';
-            
-            if (assets.length === 0) {
-                assetContainer.innerHTML = '<div class="empty-state">Nog geen assets. Maak je eerste asset aan!</div>';
-                return;
-            }
-            
-            assets.forEach(asset => {
-                const assetElement = document.createElement('div');
-                assetElement.classList.add('asset-item');
-                
-                // Format file size
-                const fileSize = asset.fileSize || 'Onbekend';
-                
-                // Format date
-                const createdDate = asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('nl-NL') : 'Onbekend';
-                
-                assetElement.innerHTML = `
-                    <div class="asset-preview">
-                        ${asset.icon || '🐕'}
-                    </div>
-                    <div class="asset-info">
-                        <h3>${asset.name}</h3>
-                        <p><strong>Ras:</strong> ${asset.breed}</p>
-                        <p><strong>Bestandsgrootte:</strong> ${fileSize}</p>
-                        <p><strong>Polygonen:</strong> ${asset.polygons?.toLocaleString() || '0'}</p>
-                        <p><strong>Populariteit:</strong> ${asset.popularity || 0}%</p>
-                        <p><strong>Views:</strong> ${asset.views || 0}</p>
-                        <p><strong>Downloads:</strong> ${asset.downloads || 0}</p>
-                        <p><strong>Aangemaakt:</strong> ${createdDate}</p>
-                        <p><strong>Beschrijving:</strong> ${asset.description}</p>
-                        <div class="asset-tags">
-                            ${(asset.tags || []).map(tag => `<span class="asset-tag">${tag}</span>`).join('')}
-                        </div>
-                        <div class="asset-buttons">
-                            <button class="edit-asset" data-id="${asset._id}">Bewerk</button>
-                            <button class="delete-asset" data-id="${asset._id}">Verwijder</button>
-                            ${asset.modelFile?.url ? `<a href="${asset.modelFile.url}" target="_blank" class="download-asset">Download</a>` : ''}
-                        </div>
-                    </div>
-                `;
-                assetContainer.appendChild(assetElement);
-            });
+        // Replace your displayAssets function in manageAssets.html with this:
+
+function displayAssets(assets) {
+    const assetContainer = document.getElementById('assetContainer');
+    assetContainer.innerHTML = '';
+    
+    if (assets.length === 0) {
+        assetContainer.innerHTML = '<div class="empty-state">Nog geen assets. Maak je eerste asset aan!</div>';
+        return;
+    }
+    
+    assets.forEach(asset => {
+        const assetElement = document.createElement('div');
+        assetElement.classList.add('asset-item');
+        
+        // Format file size
+        const fileSize = asset.fileSize || 'Onbekend';
+        
+        // Format date
+        const createdDate = asset.createdAt ? new Date(asset.createdAt).toLocaleDateString('nl-NL') : 'Onbekend';
+        
+        // Check if there's a preview image
+        const hasPreviewImage = asset.previewImage && asset.previewImage.url;
+        
+        // Create preview section with image or icon
+        let previewSection;
+        if (hasPreviewImage) {
+            previewSection = `
+                <div class="asset-preview-admin">
+                    <img src="${asset.previewImage.url}" alt="${asset.name}" class="asset-preview-img-admin">
+                    <div class="asset-icon-overlay">${asset.icon || '🐕'}</div>
+                </div>
+            `;
+        } else {
+            previewSection = `
+                <div class="asset-preview-admin asset-preview-icon-only">
+                    ${asset.icon || '🐕'}
+                </div>
+            `;
         }
+        
+        assetElement.innerHTML = `
+            ${previewSection}
+            <div class="asset-info">
+                <h3>${asset.name}</h3>
+                <p><strong>Ras:</strong> ${asset.breed}</p>
+                <p><strong>Bestandsgrootte:</strong> ${fileSize}</p>
+                <p><strong>Polygonen:</strong> ${asset.polygons?.toLocaleString() || '0'}</p>
+                <p><strong>Populariteit:</strong> ${asset.popularity || 0}%</p>
+                <p><strong>Views:</strong> ${asset.views || 0}</p>
+                <p><strong>Downloads:</strong> ${asset.downloads || 0}</p>
+                <p><strong>Aangemaakt:</strong> ${createdDate}</p>
+                <p><strong>Beschrijving:</strong> ${asset.description}</p>
+                <div class="asset-tags">
+                    ${(asset.tags || []).map(tag => `<span class="asset-tag">${tag}</span>`).join('')}
+                </div>
+                <div class="asset-buttons">
+                    <button class="edit-asset" data-id="${asset._id}">Bewerk</button>
+                    <button class="delete-asset" data-id="${asset._id}">Verwijder</button>
+                    ${asset.modelFile?.url && !asset.modelFile.url.includes('memory://') ? 
+                        `<a href="${asset.modelFile.url}" target="_blank" class="download-asset">Download</a>` : 
+                        '<span class="download-disabled">Download niet beschikbaar</span>'
+                    }
+                </div>
+            </div>
+        `;
+        assetContainer.appendChild(assetElement);
+    });
+}
 
         // Create or update asset
         async function saveAsset(formData, isEdit = false) {

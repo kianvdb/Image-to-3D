@@ -1,5 +1,3 @@
-// src/api.js
-import axios from 'axios';
 
 const proxyUrl = "http://localhost:3000"; // Proxyserver om CORS-problemen te vermijden
 
@@ -13,14 +11,14 @@ const proxyUrl = "http://localhost:3000"; // Proxyserver om CORS-problemen te ve
  * @param {number} polycount - Optioneel: gewenste polycount (100 tot 300000). Default is 50000.
  * @returns {Promise<string>} - De taskId die gebruikt wordt om de status op te volgen.
  */
-const createModel = async (
+async function createModel(
   imageFile,
   topology = 'triangle',
   shouldTexture = true,
   symmetryMode = 'auto',
   enablePBR = false,
   polycount = 30000
-) => {
+) {
   const formData = new FormData();
   formData.append('image', imageFile);
   formData.append('topology', topology);            // ✅ Topologie parameter
@@ -43,14 +41,14 @@ console.log("📥 Response van backend:", response.data);
     console.error('❌ Fout bij aanmaken van model:', error);
     throw error;
   }
-};
+}
 
 /**
  * 📌 Poll de status van het gegenereerde model.
  * @param {string} taskId - De unieke ID van de Meshy-taak.
  * @returns {Promise<Object>} - De statusinformatie van de taak.
  */
-const getModelStatus = async (taskId) => {
+async function getModelStatus(taskId) {
   try {
     const response = await axios.get(`${proxyUrl}/api/status/${taskId}`);
 
@@ -63,8 +61,7 @@ const getModelStatus = async (taskId) => {
     console.error("❌ Fout bij ophalen van modelstatus:", error);
     throw error;
   }
-};
-
+}
 
 /**
  * 📌 Haal het gegenereerde GLB-bestand op van de backend.
@@ -72,7 +69,7 @@ const getModelStatus = async (taskId) => {
  * @param {string} format - Optioneel: formaat van het model (bijvoorbeeld 'glb', 'gltf', 'usdz', etc.).
  * @returns {Promise<Blob>} - Het modelbestand als blob.
  */
-const fetchModelBlob = async (taskId, format = 'glb') => {
+async function fetchModelBlob(taskId, format = 'glb') {
   try {
     const response = await axios.get(`${proxyUrl}/api/proxyModel/${taskId}?format=${format}`, {
       responseType: 'blob',
@@ -89,6 +86,5 @@ const fetchModelBlob = async (taskId, format = 'glb') => {
     console.error("❌ Fout bij ophalen van model via proxy:", error);
     throw error;
   }
-};
+}
 
-export { createModel, getModelStatus, fetchModelBlob };

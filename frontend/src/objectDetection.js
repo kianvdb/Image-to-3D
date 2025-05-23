@@ -1,33 +1,51 @@
-import * as cocoSsd from "@tensorflow-models/coco-ssd";
-import "@tensorflow/tfjs";
+// src/objectDetection.js
+// Now uses TensorFlow loaded globally via CDN instead of ES6 imports
 
-// ✅ Zet deze op false om detectie uit te schakelen
-export const enableDetection = true;
+// ✅ RESTORE: Enable detection (your original feature)
+const enableDetection = true;
 
 let objectDetector = null;
 
-// Laadt het COCO-SSD model (eenmalig, met caching)
-export async function loadObjectDetector() {
+// Loads the COCO-SSD model (once, with caching) - YOUR ORIGINAL LOGIC
+async function loadObjectDetector() {
+    if (!enableDetection) {
+        console.log("🚫 Object detection is disabled");
+        return null;
+    }
+    
     if (!objectDetector) {
         console.log("📦 Laden van COCO-SSD model...");
-
-        if (!window._cocoModel) {
-            window._cocoModel = await cocoSsd.load();
-            console.log("✅ COCO-SSD geladen en gecached in window");
+        
+        // Check if TensorFlow is available globally
+        if (typeof cocoSsd === 'undefined') {
+            console.error("❌ COCO-SSD not loaded! Make sure TensorFlow scripts are in index.html");
+            return null;
         }
-
-        objectDetector = window._cocoModel;
+        
+        try {
+            // Use global cocoSsd object instead of import - YOUR ORIGINAL CACHING LOGIC
+            if (!window._cocoModel) {
+                window._cocoModel = await cocoSsd.load();
+                console.log("✅ COCO-SSD geladen en gecached in window");
+            }
+            objectDetector = window._cocoModel;
+        } catch (error) {
+            console.error("❌ Failed to load COCO-SSD:", error);
+            return null;
+        }
     }
+    
     return objectDetector;
 }
 
-// Detecteert relevante objecten, zoals honden, in de afbeelding
-export async function detectRelevantObjects(imageFile) {
+// RESTORE: Your original dog detection logic
+async function detectRelevantObjects(imageFile) {
     if (!enableDetection) {
         console.warn("🚫 Objectdetectie is uitgeschakeld.");
         return { relevant: true, predictions: [] };
     }
 
+    // YOUR ORIGINAL SETTINGS
     const allowedClasses = ["dog"];
     const confidenceThreshold = 0.5;
 
@@ -39,8 +57,9 @@ export async function detectRelevantObjects(imageFile) {
             console.log("🖼️ Afbeelding geladen:", img);
 
             try {
-                await img.decode(); // ✅ Betere compatibiliteit
+                await img.decode(); // ✅ Betere compatibiliteit - YOUR ORIGINAL CODE
 
+                // YOUR ORIGINAL SCALING LOGIC
                 const maxDim = 640;
                 let scale = 1;
                 if (img.width > maxDim || img.height > maxDim) {
@@ -56,8 +75,15 @@ export async function detectRelevantObjects(imageFile) {
                 console.log("🖼️ Canvas grootte:", canvas.width, canvas.height);
 
                 const detector = await loadObjectDetector();
+                if (!detector) {
+                    console.warn("⚠️ Object detector not available, allowing generation");
+                    resolve({ relevant: true, predictions: [] });
+                    return;
+                }
+                
                 console.log("📦 Model geladen, starten met detectie...");
 
+                // YOUR ORIGINAL DETECTION LOGIC
                 const predictions = await detector.detect(canvas);
                 console.table(predictions.map(p => ({
                     class: p.class,
@@ -69,6 +95,7 @@ export async function detectRelevantObjects(imageFile) {
                     allowedClasses.includes(p.class) && p.score > confidenceThreshold
                 );
 
+                // YOUR ORIGINAL SUCCESS/FAILURE LOGIC
                 if (relevantObjects.length === 0) {
                     console.warn("⚠️ Geen relevante objecten met voldoende vertrouwen gevonden.");
                     resolve({ relevant: false, predictions });

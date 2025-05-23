@@ -245,10 +245,10 @@ button, .button, .btn {
 .assets-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr); /* Exactly 4 columns */
-    gap: 2rem;
-    max-width: 1200px; /* Constrain total width */
+    gap: 4rem; /* Increased from 2rem to 3rem for more space */
+    max-width: 1400px; /* Increased max-width slightly */
     margin: 0 auto; /* Center the grid */
-    padding: 0 2rem; /* Add padding on sides */
+    padding: 0 3rem; /* Increased padding on sides */
 }
 
 /* UPDATED ASSET CARD - Square Cards with Better Layout */
@@ -583,7 +583,7 @@ button, .button, .btn {
 @media (max-width: 1200px) {
     .assets-grid {
         grid-template-columns: repeat(3, 1fr); /* 3 columns on medium screens */
-        gap: 1.5rem;
+        gap: 2.5rem; /* Increased gap for tablets */
     }
 }
 
@@ -628,10 +628,10 @@ button, .button, .btn {
     }
 
     /* Assets responsive */
-    .assets-grid {
+      .assets-grid {
         grid-template-columns: repeat(2, 1fr) !important; /* 2 columns on tablets */
-        gap: 1rem;
-        padding: 0 1rem;
+        gap: 2rem; /* Good spacing for mobile */
+        padding: 0 2rem;
     }
     
     .asset-card {
@@ -679,7 +679,8 @@ button, .button, .btn {
         gap: 0.5rem;
     }
 
-    .assets-grid {
+.assets-grid {
         grid-template-columns: 1fr !important; /* 1 column on mobile */
+        gap: 1.5rem;
     }
 }

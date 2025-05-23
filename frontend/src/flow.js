@@ -1,4 +1,6 @@
-export function initFlow() {
+
+
+function initFlow() {
   const imageInput = document.getElementById("imageInput");
   const symmetryButtons = document.getElementById("symmetryModeButtons");
   const topologyButtons = document.getElementById("topologyButtons");
@@ -60,7 +62,7 @@ export function initFlow() {
   }
 }
 
-export function showDownloadButtons() {
+function showDownloadButtons() {
   const downloadButtons = document.querySelectorAll("#downloadGLB, #downloadUSDZ, #downloadOBJ, #downloadFBX");
   downloadButtons.forEach(btn => btn.style.display = "inline-block");
 }
