@@ -222,20 +222,22 @@ function initPolycountInput() {
 }
 
 function statusMessage(msg, timeout = 0) {
-    return new Promise(resolve => {
-        const el = document.getElementById("statusMsg");
-        if (el) {
-            el.textContent = msg;
-        }
-        setTimeout(resolve, timeout);
-    });
+  return new Promise(resolve => {
+    if (msg) {
+      showStatusMessage(msg);
+    } else {
+      hideStatusMessage();
+    }
+    setTimeout(resolve, timeout);
+  });
 }
 
 function showSpinner(show = true) {
-    const spinner = document.getElementById("spinnerContainer");
-    if (spinner) {
-        spinner.style.display = show ? "flex" : "none";
-    }
+  if (show) {
+    showProgressSection();
+  } else {
+    hideProgressSection();
+  }
 }
 
 function updateProgress(percent) {
@@ -436,6 +438,7 @@ function startPolling(taskId) {
                 const success = await loadModel(`http://localhost:3000/api/proxyModel/${taskId}?format=glb`);
                 await statusMessage(success ? "✅ Model succesvol geladen!" : "❌ Kon model niet laden.");
                 return;
+                
             }
 
             if (res.status === "FAILED" || res.status === "ERROR") {
@@ -449,7 +452,7 @@ function startPolling(taskId) {
         }
     }, 5000);
 }
-
+showActionButtons();
 async function loadModel(url) {
     try {
         const response = await fetch(url);
