@@ -5,7 +5,6 @@ function initFlow() {
   const imageInput = document.getElementById("imageInput");
   const controlsSidebar = document.querySelector(".controls-sidebar");
   const generateBtn = document.getElementById("generateBtn");
-  const downloadButtons = document.querySelector(".download-buttons");
   const actionButtons = document.querySelector(".action-buttons");
   const pbrButtons = document.getElementById("pbrButtons");
   const pbrCheckbox = document.getElementById("pbrCheckbox");
@@ -14,6 +13,7 @@ function initFlow() {
 
   // Initialize dropdown controls
   initDropdowns();
+  initDownloadDropdown();
 
   // Initially: controls are disabled (greyed out) until image is uploaded
   controlsSidebar.classList.add('disabled');
@@ -52,6 +52,54 @@ function initFlow() {
       console.log(`🔘 PBR enabled: ${window.enablePBR}`);
     });
   }
+}
+
+function initDownloadDropdown() {
+  const downloadDropdown = document.querySelector('.download-dropdown');
+  const downloadTrigger = document.querySelector('.download-trigger');
+  const downloadOptions = document.querySelector('.download-options');
+  const downloadButtons = document.querySelectorAll('.download-option');
+
+  if (!downloadDropdown || !downloadTrigger) return;
+
+  // Handle dropdown toggle
+  downloadTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
+    
+    // Only open if downloads are ready
+    const actionButtons = downloadDropdown.closest('.action-buttons');
+    if (!actionButtons.classList.contains('downloads-ready')) {
+      return;
+    }
+    
+    downloadDropdown.classList.toggle('open');
+  });
+
+  // Handle download option clicks
+  downloadButtons.forEach(button => {
+    button.addEventListener('click', (e) => {
+      e.stopPropagation();
+      
+      // Close dropdown
+      downloadDropdown.classList.remove('open');
+      
+      // Get the format from the button id
+      const format = button.id.replace('download', '').toLowerCase();
+      console.log(`📥 Downloading ${format.toUpperCase()} format`);
+      
+      // Call the download function
+      if (window.downloadModel) {
+        window.downloadModel(format);
+      }
+    });
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!downloadDropdown.contains(e.target)) {
+      downloadDropdown.classList.remove('open');
+    }
+  });
 }
 
 function initDropdowns() {
@@ -258,17 +306,47 @@ function hideProgressSection() {
 }
 
 function showDownloadButtons() {
-  const downloadButtons = document.querySelector(".download-buttons");
-  if (downloadButtons) {
-    downloadButtons.classList.add("visible");
-    console.log("📥 Download buttons enabled");
+  const actionButtons = document.querySelector(".action-buttons");
+  if (actionButtons) {
+    // Add the downloads-ready class to enable the download button
+    actionButtons.classList.add("downloads-ready");
+    
+    // Add a brief initial pulse to draw attention, then permanent glow
+    setTimeout(() => {
+      const downloadTrigger = actionButtons.querySelector('.download-trigger');
+      if (downloadTrigger) {
+        // Add a temporary pulse effect to draw attention
+        downloadTrigger.style.animation = 'pulse 0.6s ease-out 3';
+        
+        // After pulse, remove animation (permanent glow will show)
+        setTimeout(() => {
+          downloadTrigger.style.animation = '';
+        }, 1800); // 3 pulses
+      }
+    }, 100);
+    
+    console.log("📥 Download dropdown enabled with permanent glow");
   }
 }
 
+// Add pulse animation to CSS via JavaScript
+if (!document.getElementById('pulseAnimation')) {
+  const style = document.createElement('style');
+  style.id = 'pulseAnimation';
+  style.textContent = `
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 function hideDownloadButtons() {
-  const downloadButtons = document.querySelector(".download-buttons");
-  if (downloadButtons) {
-    downloadButtons.classList.remove("visible");
+  const actionButtons = document.querySelector(".action-buttons");
+  if (actionButtons) {
+    actionButtons.classList.remove("downloads-ready");
   }
 }
 
@@ -284,5 +362,6 @@ function hideActionButtons() {
   const actionButtons = document.querySelector(".action-buttons");
   if (actionButtons) {
     actionButtons.classList.remove("visible");
+    actionButtons.classList.remove("downloads-ready");
   }
 }

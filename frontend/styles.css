@@ -13,6 +13,41 @@ body {
     min-height: 100vh;
 }
 
+/* Add geometric pattern background to body for full width coverage */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    opacity: 0.08;
+    background-image: url("data:image/svg+xml,<svg style='stroke:rgb%28230, 230, 230%29; stroke-width: 0.5px;fill:none;'  id='Layer_12' data-name='Layer 12' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60.13 99.94'><path class='cls-1' d='m45.68,50.02l14.46-12.03v-.92l-20.34-16.89-8.79-7.38h29.12v-.68L45.65,0h-.84l-14.68,12.15L15.65,0l-.86.02,14.56,12.22H.52V.02H-.05v99.92h.57v-11.72l14.17,11.72h1.08l14.36-11.95,14.56,11.95h.89l-14.66-12.04h29.21v-.57h-29.22l29.22-24.37v-.82l-14.46-12.13Zm13.68-12.68h-28.84V13.2l8.89,7.44,19.95,16.69ZM29.95,13.12v24.21H.92L29.95,13.12Zm0,24.78v24.01l-14.27-11.89h0S.93,37.9.93,37.9h29.02Zm.57,24.9h28.84l-28.84,24.11v-24.11Zm-15.28-12.41l14.22,11.85H.92l14.31-11.85ZM1.01,62.8h28.94v24.11L1.01,62.8Zm58.34-.57h-28.84v-24.01l14.51,11.99,14.33,12.02Zm-14.12-12.59l-14.21-11.75h28.33l-14.12,11.75Zm0-49.26l14.22,11.85h-28.53L45.23.39Zm-15.88,12.42L.52,36.91V12.8h28.83Zm-14.56,37.22L.52,61.83v-23.53l14.27,11.72Zm14.57,37.32H.52v-24.13l28.84,24.13Zm-14.12,12.31l-14.21-11.75h28.33l-14.12,11.75Z'/></svg>");
+    background-repeat: repeat;
+    background-size: 70px;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Ensure content is above the pattern */
+.main-layout {
+    position: relative;
+    z-index: 1;
+}
+
+/* Keep header and footer with solid black background */
+.header {
+    background-color: #0a0a0a;
+    position: relative;
+    z-index: 1000;
+}
+
+.footer {
+    background-color: #0a0a0a;
+    position: relative;
+    z-index: 1000;
+}
+
 /* Typography matching homepage */
 h1, h2, h3, h4, h5, h6, .heading {
     font-family: 'Sora', sans-serif;
@@ -275,6 +310,7 @@ button, .button, .btn {
     transition: all 0.4s ease;
     gap: 1rem;
     justify-content: center;
+    align-items: stretch;
 }
 
 .action-buttons.visible {
@@ -313,6 +349,179 @@ button, .button, .btn {
     font-size: 0.8rem;
     white-space: nowrap;
     z-index: 1000;
+}
+
+/* Download dropdown styling */
+.download-dropdown {
+    position: relative;
+    flex: 1;
+}
+
+.download-trigger {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.3);
+    padding: 1rem 2rem;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: not-allowed;
+    transition: all 0.3s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Active state when downloads are ready */
+.action-buttons.downloads-ready .download-trigger {
+    background: rgba(0, 188, 212, 0.1);
+    color: #00bcd4;
+    border-color: #00bcd4;
+    cursor: pointer;
+    position: relative;
+    /* Permanent glow - no animation alternating */
+    box-shadow: 
+        0 0 20px rgba(0, 188, 212, 0.5),
+        0 0 30px rgba(0, 188, 212, 0.3),
+        inset 0 0 15px rgba(0, 188, 212, 0.2);
+}
+
+/* Remove the old blinking glow animation */
+/* @keyframes downloadGlow - REMOVED */
+
+/* Keep the sweeping light effect */
+.action-buttons.downloads-ready .download-trigger::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(0, 188, 212, 0.4),
+        transparent
+    );
+    animation: lightSweep 3s ease-in-out infinite;
+}
+
+@keyframes lightSweep {
+    0% {
+        left: -100%;
+    }
+    50% {
+        left: 100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+.action-buttons.downloads-ready .download-trigger:hover {
+    background: rgba(0, 188, 212, 0.2);
+    border-color: #00e5ff;
+    color: white;
+    transform: translateY(-2px);
+    /* Enhanced glow on hover */
+    box-shadow: 
+        0 8px 25px rgba(0, 188, 212, 0.6),
+        0 0 35px rgba(0, 188, 212, 0.4),
+        inset 0 0 20px rgba(0, 188, 212, 0.3);
+}
+
+.download-trigger .dropdown-arrow {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.8rem;
+    transition: transform 0.3s ease;
+    z-index: 2;
+}
+
+.action-buttons.downloads-ready .download-trigger .dropdown-arrow {
+    color: #00bcd4;
+}
+
+.download-dropdown.open .dropdown-arrow {
+    transform: rotate(90deg);
+}
+
+/* Dropdown options - HIDDEN by default */
+.download-options {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px rgba(0, 188, 212, 0.2);
+}
+
+/* Show options when dropdown is open */
+.download-dropdown.open .download-options {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.download-option {
+    width: 100%;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.8);
+    border: none;
+    padding: 0.8rem 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Sora', sans-serif;
+    font-size: 0.9rem;
+    text-align: left;
+    font-weight: 500;
+}
+
+.download-option:hover {
+    background: rgba(0, 188, 212, 0.2);
+    color: #00bcd4;
+    transform: translateX(5px);
+}
+
+.download-option:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.download-option:last-child {
+    border-radius: 0 0 8px 8px;
+}
+
+/* Entrance animation for download options */
+.download-dropdown.open .download-option {
+    animation: slideInOption 0.3s ease forwards;
+}
+
+.download-dropdown.open .download-option:nth-child(1) { animation-delay: 0.1s; }
+.download-dropdown.open .download-option:nth-child(2) { animation-delay: 0.15s; }
+.download-dropdown.open .download-option:nth-child(3) { animation-delay: 0.2s; }
+.download-dropdown.open .download-option:nth-child(4) { animation-delay: 0.25s; }
+
+@keyframes slideInOption {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 /* Right side - Controls sidebar */
@@ -477,8 +686,7 @@ button, .button, .btn {
     border-radius: 3px;
     background: rgba(255, 255, 255, 0.2);
     outline: none;
-   -webkit-appearance: none;
-appearance: none;
+    -webkit-appearance: none;
 }
 
 #polycountSlider::-webkit-slider-thumb {
@@ -688,57 +896,6 @@ appearance: none;
     border-radius: 3px;
 }
 
-/* Download buttons - greyed out initially */
-.button-group.download-buttons {
-    display: flex;
-    opacity: 0.3;
-    visibility: visible;
-    transform: translateY(20px);
-    transition: all 0.4s ease;
-    gap: 0.6rem;
-    margin-top: 1rem;
-    pointer-events: none;
-}
-
-.button-group.download-buttons.visible {
-    opacity: 1;
-    transform: translateY(0);
-    pointer-events: auto;
-}
-
-#downloadGLB, #downloadUSDZ, #downloadOBJ, #downloadFBX {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 0.6rem 0.8rem;
-    border-radius: 6px;
-    font-family: 'Sora', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    flex: 1;
-    text-align: center;
-}
-
-.button-group.download-buttons.visible #downloadGLB,
-.button-group.download-buttons.visible #downloadUSDZ,
-.button-group.download-buttons.visible #downloadOBJ,
-.button-group.download-buttons.visible #downloadFBX {
-    color: rgba(255, 255, 255, 0.9);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-.button-group.download-buttons.visible #downloadGLB:hover,
-.button-group.download-buttons.visible #downloadUSDZ:hover,
-.button-group.download-buttons.visible #downloadOBJ:hover,
-.button-group.download-buttons.visible #downloadFBX:hover {
-    background: rgba(0, 188, 212, 0.2);
-    border-color: #00bcd4;
-    color: #00bcd4;
-    transform: translateY(-1px);
-}
-
 /* Responsive design */
 @media (max-width: 1024px) {
     .main-layout {
@@ -779,10 +936,6 @@ appearance: none;
         grid-column: 1 / -1;
     }
     
-    .button-group.download-buttons {
-        grid-column: 1 / -1;
-    }
-    
     .container {
         padding: 1.5rem;
     }
@@ -813,6 +966,22 @@ appearance: none;
     .action-buttons {
         flex-direction: column;
         gap: 0.8rem;
+    }
+    
+    .download-options {
+        position: fixed;
+        bottom: auto;
+        top: 100%;
+        left: 50%;
+        right: auto;
+        width: 200px;
+        transform: translateX(-50%);
+        margin-top: 8px;
+        margin-bottom: 0;
+    }
+    
+    .download-dropdown.open .download-options {
+        transform: translateX(-50%) translateY(0);
     }
     
     .polycount-inputs {

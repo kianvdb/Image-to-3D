@@ -63,169 +63,176 @@
         </nav>
     </header>
 
-  <div class="container">
+    <div class="container">
+        <div class="main-layout">
+            <!-- Left side - 3D Viewer -->
+            <div class="viewer-section">
+                <!-- 3D Viewer -->
+                <div id="viewer">
+                    <div id="3dCanvas">
+                        <div id="dogFactOverlay"></div>
+                    </div>
+                </div>
 
-    <div class="main-layout">
-      <!-- Left side - 3D Viewer -->
-      <div class="viewer-section">
-        <!-- 3D Viewer -->
-        <div id="viewer">
-          <div id="3dCanvas">
-            <div id="dogFactOverlay"></div>
-          </div>
-        </div>
+                <!-- Action buttons (hidden until model loads) -->
+                <div class="action-buttons">
+                    <button class="action-btn">
+                        <span>❤️ Rigging & Animation</span>
+                    </button>
+                    <button class="action-btn">
+                        <span>🚀 Export to Unity</span>
+                    </button>
+                    <!-- Download dropdown -->
+                    <div class="download-dropdown">
+                        <button class="download-trigger">
+                            <span>📥 Download</span>
+                            <span class="dropdown-arrow">></span>
+                        </button>
+                        <div class="download-options">
+                            <button id="downloadGLB" class="download-option">GLB</button>
+                            <button id="downloadUSDZ" class="download-option">USDZ</button>
+                            <button id="downloadOBJ" class="download-option">OBJ</button>
+                            <button id="downloadFBX" class="download-option">FBX</button>
+                        </div>
+                    </div>
+                </div>
+            </div> <!-- ✅ FIXED: Close viewer-section here -->
 
-        <!-- Action buttons (hidden until model loads) -->
-        <div class="action-buttons">
-          <button class="action-btn">
-            <span>❤️ Rigging & Animation</span>
-          </button>
-          <button class="action-btn">
-            <span>🚀 Export to Unity</span>
-          </button>
-        </div>
-      </div>
+            <!-- Right side - Controls -->
+            <div class="controls-sidebar disabled">
+                
+                <!-- Image Upload -->
+                <div class="control-section image-upload">
+                    <label class="control-label" for="imageInput">Upload Image</label>
+                    <input type="file" id="imageInput" accept="image/*"/>
+                </div>
 
-      <!-- Right side - Controls -->
-      <div class="controls-sidebar disabled">
-        
-        <!-- Image Upload -->
-        <div class="control-section image-upload">
-          <label class="control-label" for="imageInput">Upload Image</label>
-          <input type="file" id="imageInput" accept="image/*"/>
-        </div>
+                <!-- Symmetry Controls -->
+                <div class="control-section">
+                    <label class="control-label">Symmetry</label>
+                    <div class="dropdown-control" id="symmetryDropdown">
+                        <div class="dropdown-display">
+                            <span class="dropdown-value">Auto</span>
+                            <span class="dropdown-arrow">></span>
+                        </div>
+                        <div class="dropdown-options">
+                            <div class="dropdown-option" data-value="auto">Auto</div>
+                            <div class="dropdown-option" data-value="on">On</div>
+                        </div>
+                    </div>
+                    <!-- Hidden buttons for compatibility -->
+                    <div id="symmetryModeButtons" style="display: none;">
+                        <button class="symmetry-btn" data-symmetry="auto">Auto</button>
+                        <button class="symmetry-btn" data-symmetry="on">On</button>
+                    </div>
+                </div>
 
-        <!-- Symmetry Controls -->
-        <div class="control-section">
-          <label class="control-label">Symmetry</label>
-          <div class="dropdown-control" id="symmetryDropdown">
-            <div class="dropdown-display">
-              <span class="dropdown-value">Auto</span>
-              <span class="dropdown-arrow">></span>
-            </div>
-            <div class="dropdown-options">
-              <div class="dropdown-option" data-value="auto">Auto</div>
-              <div class="dropdown-option" data-value="on">On</div>
-            </div>
-          </div>
-          <!-- Hidden buttons for compatibility -->
-          <div id="symmetryModeButtons" style="display: none;">
-            <button class="symmetry-btn" data-symmetry="auto">Auto</button>
-            <button class="symmetry-btn" data-symmetry="on">On</button>
-          </div>
-        </div>
+                <!-- Topology Controls -->
+                <div class="control-section">
+                    <label class="control-label">Topology</label>
+                    <div class="dropdown-control" id="topologyDropdown">
+                        <div class="dropdown-display">
+                            <span class="dropdown-value">Triangles</span>
+                            <span class="dropdown-arrow">></span>
+                        </div>
+                        <div class="dropdown-options">
+                            <div class="dropdown-option" data-value="triangle">Triangles</div>
+                            <div class="dropdown-option" data-value="quad">Quads</div>
+                        </div>
+                    </div>
+                    <!-- Hidden buttons for compatibility -->
+                    <div id="topologyButtons" style="display: none;">
+                        <button class="topology-btn" data-topology="triangle">Triangles</button>
+                        <button class="topology-btn" data-topology="quad">Quads</button>
+                    </div>
+                </div>
 
-        <!-- Topology Controls -->
-        <div class="control-section">
-          <label class="control-label">Topology</label>
-          <div class="dropdown-control" id="topologyDropdown">
-            <div class="dropdown-display">
-              <span class="dropdown-value">Triangles</span>
-              <span class="dropdown-arrow">></span>
-            </div>
-            <div class="dropdown-options">
-              <div class="dropdown-option" data-value="triangle">Triangles</div>
-              <div class="dropdown-option" data-value="quad">Quads</div>
-            </div>
-          </div>
-          <!-- Hidden buttons for compatibility -->
-          <div id="topologyButtons" style="display: none;">
-            <button class="topology-btn" data-topology="triangle">Triangles</button>
-            <button class="topology-btn" data-topology="quad">Quads</button>
-          </div>
-        </div>
+                <!-- Polycount Controls -->
+                <div class="control-section">
+                    <div class="polycount-control">
+                        <label class="control-label" for="polycountSlider">Polycount</label>
+                        <div class="polycount-inputs">
+                            <input type="range" id="polycountSlider" min="100" max="300000" value="30000" step="100">
+                            <input type="number" id="polycountInput" min="100" max="300000" value="30000" step="100">
+                        </div>
+                    </div>
+                </div>
 
-        <!-- Polycount Controls -->
-        <div class="control-section">
-          <div class="polycount-control">
-            <label class="control-label" for="polycountSlider">Polycount</label>
-            <div class="polycount-inputs">
-              <input type="range" id="polycountSlider" min="100" max="300000" value="30000" step="100">
-              <input type="number" id="polycountInput" min="100" max="300000" value="30000" step="100">
-            </div>
-          </div>
-        </div>
+                <!-- Texture Controls -->
+                <div class="control-section">
+                    <label class="control-label">Texture</label>
+                    <div class="dropdown-control" id="textureDropdown">
+                        <div class="dropdown-display">
+                            <span class="dropdown-value">Yes</span>
+                            <span class="dropdown-arrow">></span>
+                        </div>
+                        <div class="dropdown-options">
+                            <div class="dropdown-option" data-value="true">Yes</div>
+                            <div class="dropdown-option" data-value="false">No</div>
+                        </div>
+                    </div>
+                    <!-- Hidden buttons for compatibility -->
+                    <div id="shouldTextureButtons" style="display: none;">
+                        <button class="texture-btn" data-texture="true">Yes</button>
+                        <button class="texture-btn" data-texture="false">No</button>
+                    </div>
+                </div>
 
-        <!-- Texture Controls -->
-        <div class="control-section">
-          <label class="control-label">Texture</label>
-          <div class="dropdown-control" id="textureDropdown">
-            <div class="dropdown-display">
-              <span class="dropdown-value">Yes</span>
-              <span class="dropdown-arrow">></span>
-            </div>
-            <div class="dropdown-options">
-              <div class="dropdown-option" data-value="true">Yes</div>
-              <div class="dropdown-option" data-value="false">No</div>
-            </div>
-          </div>
-          <!-- Hidden buttons for compatibility -->
-          <div id="shouldTextureButtons" style="display: none;">
-            <button class="texture-btn" data-texture="true">Yes</button>
-            <button class="texture-btn" data-texture="false">No</button>
-          </div>
-        </div>
+                <!-- PBR Controls -->
+                <div class="control-section">
+                    <div id="pbrButtons" class="checkbox-group" style="display: none">
+                        <label for="pbrCheckbox">
+                            <input type="checkbox" id="pbrCheckbox" />
+                            PBR Enabled
+                        </label>
+                    </div>
+                </div>
 
-        <!-- PBR Controls -->
-        <div class="control-section">
-          <div id="pbrButtons" class="checkbox-group" style="display: none">
-            <label for="pbrCheckbox">
-              <input type="checkbox" id="pbrCheckbox" />
-              PBR Enabled
-            </label>
-          </div>
-        </div>
+                <!-- Generate Button -->
+                <button id="generateBtn">Generate Model</button>
 
-        <!-- Generate Button -->
-        <button id="generateBtn">Generate Model</button>
+                <!-- Status Message -->
+                <div id="statusMsg" class="status-message"></div>
+                
+                <!-- Progress Section -->
+                <div class="progress-section">
+                    <div id="spinnerContainer">
+                        <div class="spinner"></div>
+                        <span id="progressText">0%</span>
+                    </div>
+                    
+                    <!-- Progress Bar -->
+                    <progress id="progressBar" value="0" max="100"></progress>
+                </div>
+                
+                <!-- ✅ REMOVED: No download buttons here anymore -->
+                
+            </div> <!-- ✅ Close controls-sidebar here -->
+        </div> <!-- ✅ Close main-layout here -->
+    </div> <!-- ✅ Close container here -->
 
-        <!-- Status Message -->
-        <div id="statusMsg" class="status-message"></div>
-        
-        <!-- Progress Section -->
-        <div class="progress-section">
-          <div id="spinnerContainer">
-            <div class="spinner"></div>
-            <span id="progressText">0%</span>
-          </div>
-          
-          <!-- Progress Bar -->
-          <progress id="progressBar" value="0" max="100"></progress>
-        </div>
+    <!-- Footer -->
+    <footer class="footer">
+        <div>© 2024</div>
+        <div><a href="#terms" style="color: rgba(255, 255, 255, 0.6); text-decoration: none;">Terms</a></div>
+    </footer>
 
-        <!-- Download Buttons -->
-        <div class="button-group download-buttons">
-          <button id="downloadGLB">GLB</button>
-          <button id="downloadUSDZ">USDZ</button>
-          <button id="downloadOBJ">OBJ</button>
-          <button id="downloadFBX">FBX</button>
-        </div>
-      </div>
-    </div>
-  </div>
+    <!-- Mobile nav toggle function -->
+    <script>
+        function toggleMobileNav() {
+            const mobileNav = document.getElementById('mobileNav');
+            const hamburger = document.querySelector('.hamburger');
+            mobileNav.classList.toggle('active');
+            hamburger.classList.toggle('active');
+        }
+    </script>
 
-  <!-- Footer -->
-  <footer class="footer">
-      <div>© 2024</div>
-      <div><a href="#terms" style="color: rgba(255, 255, 255, 0.6); text-decoration: none;">Terms</a></div>
-  </footer>
-
-  <!-- Mobile nav toggle function -->
-  <script>
-    function toggleMobileNav() {
-      const mobileNav = document.getElementById('mobileNav');
-      const hamburger = document.querySelector('.hamburger');
-      mobileNav.classList.toggle('active');
-      hamburger.classList.toggle('active');
-    }
-  </script>
-
-  <!-- Load your custom modules before main.js -->
-  <script src="src/dogfacts.js"></script>
-  <script src="src/api.js"></script>
-  <script src="src/objectDetection.js"></script>
-  <script src="src/flow.js"></script>
-  <!-- Changed from type="module" to regular script -->
-  <script src="src/main.js"></script>
+    <!-- Load your custom modules before main.js -->
+    <script src="src/dogfacts.js"></script>
+    <script src="src/api.js"></script>
+    <script src="src/objectDetection.js"></script>
+    <script src="src/flow.js"></script>
+    <!-- Changed from type="module" to regular script -->
+    <script src="src/main.js"></script>
 </body>
 </html>

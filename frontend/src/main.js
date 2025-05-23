@@ -452,7 +452,7 @@ function startPolling(taskId) {
         }
     }, 5000);
 }
-showActionButtons();
+
 async function loadModel(url) {
     try {
         const response = await fetch(url);
@@ -486,7 +486,7 @@ async function loadModel(url) {
 
                 // 🔍 Smooth camera-zoom naar het model
                 frameModel(model);
-
+showActionButtons();
                 resolve(true);
             }, (err) => {
                 console.error("❌ Parsefout GLTF:", err);
@@ -588,18 +588,46 @@ function frameModel(model) {
 }
 
 showDownloadButtons();
-
+window.downloadModel = downloadModel;
 function downloadModel(format = 'glb') {
     const downloadUrl = `http://localhost:3000/api/proxyModel/${currentTaskId}?format=${format}`;
     const filename = `model.${format}`;
     downloadFile(downloadUrl, filename);
 }
 
-function downloadFile(url, name) {
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = name;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+// Replace your existing downloadModel and downloadFile functions with these:
+async function downloadModel(format = 'glb') {
+    try {
+        console.log(`📥 Starting download: ${format.toUpperCase()}`);
+        
+        const downloadUrl = `http://localhost:3000/api/proxyModel/${currentTaskId}?format=${format}`;
+        
+        // Simple fetch and download - only one method
+        const response = await fetch(downloadUrl);
+        
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `dalma-model.${format}`;
+        a.style.display = 'none';
+        
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        
+        // Cleanup
+        window.URL.revokeObjectURL(url);
+        
+        console.log(`✅ Downloaded: dalma-model.${format}`);
+        
+    } catch (error) {
+        console.error(`❌ Download failed for ${format}:`, error);
+        alert(`Download failed: ${error.message}`);
+    }
 }

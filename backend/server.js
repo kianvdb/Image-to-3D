@@ -255,8 +255,6 @@ app.get('/api/proxyModel/:taskId', async (req, res) => {
     const result = statusRes.data?.result || statusRes.data;
     const urls = result?.model_urls;
 
-    console.log("📦 Retrieved model_urls:", urls);
-
     if (!urls || typeof urls !== 'object') {
       console.error("❌ model_urls missing or invalid in API response.");
       return res.status(500).send("No model_urls found in API response.");
@@ -268,25 +266,36 @@ app.get('/api/proxyModel/:taskId', async (req, res) => {
       return res.status(404).send(`Format '${format}' not available for this model.`);
     }
 
+    // Fetch the model file
     const fileResponse = await axios.get(modelUrl, { responseType: 'arraybuffer' });
 
+    // Force download with proper headers
     const contentTypes = {
       glb: 'model/gltf-binary',
       gltf: 'model/gltf+json',
-      usdz: 'model/vnd.usdz+zip',
-      obj: 'text/plain',
+      usdz: 'model/vnd.usdz+zip', 
+      obj: 'application/octet-stream', // ✅ Changed from text/plain to force download
       fbx: 'application/octet-stream'
     };
 
     const contentType = contentTypes[format] || 'application/octet-stream';
-    res.set('Content-Type', contentType);
+    
+    // ✅ CRITICAL: Set headers to force download
+    res.set({
+      'Content-Type': contentType,
+      'Content-Disposition': `attachment; filename="dalma-model.${format}"`,
+      'Content-Length': fileResponse.data.length,
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    });
+    
     res.send(fileResponse.data);
+    
   } catch (error) {
     console.error('❌ Error fetching model:', error.response?.data || error.message);
     res.status(500).send('Error fetching model');
   }
 });
-
 // Endpoint to save completed Meshy model as asset
 app.post('/api/saveAsset/:taskId', async (req, res) => {
   const { taskId } = req.params;
