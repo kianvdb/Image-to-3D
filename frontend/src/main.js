@@ -1,5 +1,3 @@
-
-
 let scene, camera, renderer, controls, model;
 let currentTaskId;
 let selectedTopology = 'triangle';
@@ -10,12 +8,13 @@ let selectedPolycount = 30000;
 let dogFactOverlay;
 let factInterval;
 let factIndex = 0;
+let randomizedDogFacts = []; // Array to hold randomized dog facts
 
 
 document.addEventListener("DOMContentLoaded", async () => {
     console.log("📌 DOM geladen...");
 
-    initFlow();
+    // Note: initFlow() is now called from flow.js with nuclear dropdowns
     initScene();
     initDownloadButtons();
     initTopologyButtons();
@@ -23,25 +22,59 @@ document.addEventListener("DOMContentLoaded", async () => {
     initSymmetryButtons();
     initPolycountInput();
 
-    // ✅ Init selecties
-    document.querySelector('.topology-btn[data-topology="triangle"]').classList.add('selected', 'active');
-    document.querySelector('.texture-btn[data-texture="true"]').classList.add('selected', 'active');
+    // ✅ Init selecties - Nuclear dropdowns will handle this automatically
+    const triangleBtn = document.querySelector('.topology-btn[data-topology="triangle"]');
+    const textureBtn = document.querySelector('.texture-btn[data-texture="true"]');
+    const symmetryBtn = document.querySelector('.symmetry-btn[data-symmetry="auto"]');
+    
+    if (triangleBtn) triangleBtn.classList.add('selected', 'active');
+    if (textureBtn) textureBtn.classList.add('selected', 'active');
+    if (symmetryBtn) symmetryBtn.classList.add('selected', 'active');
+    
     selectedTexture = "true"; // synchroon met UI
-    document.querySelector('.symmetry-btn[data-symmetry="auto"]').classList.add('selected', 'active');
 
     // Zet PBR waarde naar false (standaard)
     enablePBR = false;
-    document.getElementById("pbrButtons").style.display = "none";
+    const pbrButtons = document.getElementById("pbrButtons");
+    if (pbrButtons) {
+        pbrButtons.style.display = "none";
+    }
 
     // Eventlistener voor PBR checkbox
     const pbrCheckbox = document.getElementById("pbrCheckbox");
-    pbrCheckbox.addEventListener("change", (e) => {
-        enablePBR = e.target.checked;
-        console.log(`🔘 Geselecteerde PBR: ${enablePBR}`);
-    });
+    if (pbrCheckbox) {
+        pbrCheckbox.addEventListener("change", (e) => {
+            enablePBR = e.target.checked;
+            console.log(`🔘 Geselecteerde PBR: ${enablePBR}`);
+        });
+    }
 
     document.getElementById("generateBtn").addEventListener("click", generateModel);
+    
+    // Make variables globally available for dropdown updates
+    window.selectedTopology = selectedTopology;
+    window.selectedTexture = selectedTexture;
+    window.selectedSymmetry = selectedSymmetry;
+    window.enablePBR = enablePBR;
+    window.selectedPolycount = selectedPolycount;
 });
+
+// Randomize dog facts array
+function randomizeDogFacts() {
+    if (!dogFacts || !dogFacts.length) {
+        console.warn("⚠️ dogFacts array is leeg of niet gedefinieerd.");
+        return [];
+    }
+    
+    // Create a copy and shuffle it
+    randomizedDogFacts = [...dogFacts];
+    for (let i = randomizedDogFacts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [randomizedDogFacts[i], randomizedDogFacts[j]] = [randomizedDogFacts[j], randomizedDogFacts[i]];
+    }
+    console.log("🔀 Dog facts randomized");
+    return randomizedDogFacts;
+}
 
 function initScene() {
     scene = new THREE.Scene();
@@ -62,8 +95,9 @@ function initScene() {
     renderer.setSize(width, height);
     renderer.shadowMap.enabled = true;
 
-    // Store the overlay before clearing
+    // Store the overlays before clearing
     const dogFactOverlay = document.getElementById("dogFactOverlay");
+    const generationOverlay = document.getElementById("generationOverlay");
     
     // Clear only existing canvas elements
     const existingCanvases = canvas3d.querySelectorAll("canvas");
@@ -75,9 +109,12 @@ function initScene() {
     renderer.domElement.style.height = '100%';
     canvas3d.appendChild(renderer.domElement);
     
-    // Ensure overlay stays in place and is properly sized
+    // Ensure overlays stay in place and are properly sized
     if (dogFactOverlay && !canvas3d.contains(dogFactOverlay)) {
         canvas3d.appendChild(dogFactOverlay);
+    }
+    if (generationOverlay && !canvas3d.contains(generationOverlay)) {
+        canvas3d.appendChild(generationOverlay);
     }
 
     // Rest of your lighting setup
@@ -146,10 +183,14 @@ function initTopologyButtons() {
     const buttons = document.querySelectorAll('.topology-btn');
 
     buttons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (e) => {
+            // Skip if this click came from nuclear dropdown to avoid infinite loops
+            if (e.fromDropdown) return;
+            
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
             button.classList.add('selected', 'active');
             selectedTopology = button.dataset.topology;
+            window.selectedTopology = selectedTopology;
             console.log(`🔘 Geselecteerde topologie: ${selectedTopology}`);
         });
     });
@@ -159,22 +200,27 @@ function initTextureButtons() {
     const buttons = document.querySelectorAll('.texture-btn');
 
     buttons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (e) => {
+            // Skip if this click came from nuclear dropdown to avoid infinite loops
+            if (e.fromDropdown) return;
+            
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
             button.classList.add('selected', 'active');
             selectedTexture = button.dataset.texture;
+            window.selectedTexture = selectedTexture;
             console.log(`🔘 Geselecteerde textuur: ${selectedTexture}`);
 
             const pbrButtons = document.getElementById("pbrButtons");
             if (selectedTexture === "true") {
-                pbrButtons.style.display = "flex";
+                if (pbrButtons) pbrButtons.style.display = "flex";
             } else {
-                pbrButtons.style.display = "none";
+                if (pbrButtons) pbrButtons.style.display = "none";
                 const pbrCheckbox = document.getElementById("pbrCheckbox");
                 if (pbrCheckbox) {
                     pbrCheckbox.checked = false;
                 }
                 enablePBR = false;
+                window.enablePBR = false;
             }
         });
     });
@@ -184,10 +230,14 @@ function initSymmetryButtons() {
     const buttons = document.querySelectorAll('.symmetry-btn');
 
     buttons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (e) => {
+            // Skip if this click came from nuclear dropdown to avoid infinite loops
+            if (e.fromDropdown) return;
+            
             buttons.forEach(btn => btn.classList.remove('selected', 'active'));
             button.classList.add('selected', 'active');
             selectedSymmetry = button.dataset.symmetry;
+            window.selectedSymmetry = selectedSymmetry;
             console.log(`🔘 Geselecteerde symmetrie: ${selectedSymmetry}`);
         });
     });
@@ -209,6 +259,7 @@ function initPolycountInput() {
         const parsed = parseInt(polyInput.value);
         if (!isNaN(parsed) && parsed > 0) {
             selectedPolycount = parsed;
+            window.selectedPolycount = selectedPolycount;
             polySlider.value = selectedPolycount;
             console.log(`🔢 Polycount ingesteld op: ${selectedPolycount}`);
         }
@@ -216,19 +267,38 @@ function initPolycountInput() {
 
     polySlider.addEventListener("input", () => {
         selectedPolycount = parseInt(polySlider.value);
+        window.selectedPolycount = selectedPolycount;
         polyInput.value = selectedPolycount;
         console.log(`🔢 Polycount ingesteld via slider op: ${selectedPolycount}`);
     });
 }
 
-function statusMessage(msg, timeout = 0) {
+// Updated status message function to use scanning overlay
+function statusMessage(msg, timeout = 0, useScanning = false) {
   return new Promise(resolve => {
     if (msg) {
-      showStatusMessage(msg);
+      if (useScanning) {
+        showScanningOverlay();
+      } else {
+        showStatusOverlay(msg);
+      }
     } else {
-      hideStatusMessage();
+      if (useScanning) {
+        hideScanningOverlay();
+      } else {
+        hideStatusOverlay();
+      }
     }
-    setTimeout(resolve, timeout);
+    setTimeout(() => {
+      if (timeout > 0) {
+        if (useScanning) {
+          hideScanningOverlay();
+        } else {
+          hideStatusOverlay();
+        }
+      }
+      resolve();
+    }, timeout);
   });
 }
 
@@ -261,38 +331,50 @@ function startDogFacts() {
     return;
   }
   
+  // Randomize the dog facts
+  randomizeDogFacts();
+  
   // Create the overlay element if it doesn't exist
   let dogFactOverlay = document.getElementById('dogFactOverlay');
   if (!dogFactOverlay) {
     console.log("🐾 dogFactOverlay niet gevonden, wordt aangemaakt...");
     dogFactOverlay = document.createElement('div');
     dogFactOverlay.id = 'dogFactOverlay';
-    document.getElementById('viewer').appendChild(dogFactOverlay);
+    document.getElementById('3dCanvas').appendChild(dogFactOverlay);
   }
 
   console.log("▶️ startDogFacts() gestart.");
-  factIndex = 0;
   
-  // Set content and make visible
-  dogFactOverlay.innerHTML = `<p>${dogFacts[factIndex]}</p>`;
-  dogFactOverlay.style.display = 'flex'; // Set display to flex before adding the visible class
+  // Show generation message first
+  showGenerationOverlay();
   
-  // Allow DOM to update before adding the visible class (for animation)
+  // After showing generation message, wait 3 seconds then start dog facts
   setTimeout(() => {
-    dogFactOverlay.classList.add('visible');
-    console.log("🐾 Overlay zichtbaar gemaakt met eerste feit:", dogFacts[factIndex]);
-  }, 10);
+    hideGenerationOverlay();
+    
+    factIndex = 0;
+    
+    // Set content and make visible
+    dogFactOverlay.innerHTML = `<p>${randomizedDogFacts[factIndex]}</p>`;
+    dogFactOverlay.style.display = 'flex'; // Set display to flex before adding the visible class
+    
+    // Allow DOM to update before adding the visible class (for animation)
+    setTimeout(() => {
+      dogFactOverlay.classList.add('visible');
+      console.log("🐾 Overlay zichtbaar gemaakt met eerste feit:", randomizedDogFacts[factIndex]);
+    }, 10);
 
-  // Start interval to cycle through facts
-  if (factInterval) {
-    clearInterval(factInterval); // Clear any existing interval
-  }
-  
-  factInterval = setInterval(() => {
-    factIndex = (factIndex + 1) % dogFacts.length;
-    dogFactOverlay.innerHTML = `<p>${dogFacts[factIndex]}</p>`;
-    console.log(`🐾 Nieuwe dog fact getoond: ${dogFacts[factIndex]}`);
-  }, 5000);
+    // Start interval to cycle through facts
+    if (factInterval) {
+      clearInterval(factInterval); // Clear any existing interval
+    }
+    
+    factInterval = setInterval(() => {
+      factIndex = (factIndex + 1) % randomizedDogFacts.length;
+      dogFactOverlay.innerHTML = `<p>${randomizedDogFacts[factIndex]}</p>`;
+      console.log(`🐾 Nieuwe dog fact getoond: ${randomizedDogFacts[factIndex]}`);
+    }, 5000);
+  }, 3000); // Wait 3 seconds before starting dog facts
 }
 
 function stopDogFacts() {
@@ -305,7 +387,10 @@ function stopDogFacts() {
     console.log("⏹️ Interval gestopt.");
   }
   
-  // Hide the overlay
+  // Hide both overlays
+  hideGenerationOverlay();
+  
+  // Hide the dog fact overlay
   const dogFactOverlay = document.getElementById('dogFactOverlay');
   if (dogFactOverlay) {
     dogFactOverlay.classList.remove('visible');
@@ -330,13 +415,29 @@ async function generateModel() {
     const minPoly = 100;
     const maxPoly = 300000;
 
-    if (selectedPolycount < minPoly || selectedPolycount > maxPoly) {
-        const origineleWaarde = selectedPolycount;
-        const aangepasteWaarde = selectedPolycount < minPoly ? minPoly : maxPoly;
+    // Use global variables (updated by nuclear dropdowns)
+    const currentPolycount = window.selectedPolycount || selectedPolycount;
+    const currentTopology = window.selectedTopology || selectedTopology;
+    const currentTexture = window.selectedTexture || selectedTexture;
+    const currentSymmetry = window.selectedSymmetry || selectedSymmetry;
+    const currentPBR = window.enablePBR || enablePBR;
+
+    console.log("🔧 Current settings from nuclear dropdowns:", {
+        polycount: currentPolycount,
+        topology: currentTopology,
+        texture: currentTexture,
+        symmetry: currentSymmetry,
+        pbr: currentPBR
+    });
+
+    if (currentPolycount < minPoly || currentPolycount > maxPoly) {
+        const origineleWaarde = currentPolycount;
+        const aangepasteWaarde = currentPolycount < minPoly ? minPoly : maxPoly;
 
         console.warn(`⚠️ Polycount ${origineleWaarde} ongeldig. Aangepast naar ${aangepasteWaarde}.`);
 
         selectedPolycount = aangepasteWaarde;
+        window.selectedPolycount = aangepasteWaarde;
         document.getElementById("polycountInput").value = selectedPolycount;
         document.getElementById("polycountSlider").value = selectedPolycount;
 
@@ -350,7 +451,10 @@ async function generateModel() {
         console.log("🖼️ Afbeelding geladen");
 
         try {
-            await statusMessage("🔍 Scanning picture...", 2000);
+            // FIRST: Show scanning overlay over upload area
+            console.log("🔍 STARTING scanning overlay...");
+            showScanningOverlay(); // Show it first
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
 
             if (enableDetection) {
                 console.log("📤 Detectie gestart...");
@@ -358,27 +462,31 @@ async function generateModel() {
                 console.log("🔍 Objectdetectie resultaat:", detection);
 
                 if (!detection.relevant) {
-                    await statusMessage("❌ No dog found. Please try again or change picture.");
+                    // Hide scanning overlay and show error
+                    hideScanningOverlay();
+                    await statusMessage("❌ No dog found. Please try again or change picture.", 3000);
                     console.warn("🚫 Geen hond gedetecteerd.");
                     showSpinner(false);
                     return;
                 }
 
                 console.log("✅ Hond gedetecteerd.");
-                await statusMessage("✅ Dog detected! Starting generation...", 2000);
-                startDogFacts();
+                // Hide scanning overlay
+                hideScanningOverlay();
+                startDogFacts(); // This will show generation overlay first, then dog facts
 
             } else {
                 console.log("🚫 Detectie uitgeschakeld.");
-                await statusMessage("🚫 Detection disabled. Starting generation...", 2000);
+                // Hide scanning overlay
+                hideScanningOverlay();
+                startDogFacts(); // This will show generation overlay first, then dog facts
             }
 
             showSpinner(true);
             updateProgress(0);
-            document.getElementById("statusMsg").textContent = "⚙️ Generating...";
             console.log("📤 Modelaanvraag verzonden...");
 
-            const taskId = await createModel(file, selectedTopology, selectedTexture, enablePBR, selectedSymmetry, selectedPolycount);
+            const taskId = await createModel(file, currentTopology, currentTexture, currentPBR, currentSymmetry, currentPolycount);
 
             if (taskId) {
                 console.log(`📬 Task-ID ontvangen: ${taskId}`);
@@ -389,13 +497,15 @@ async function generateModel() {
             }
         } catch (err) {
             console.error("❌ Fout bij modelgeneratie:", err);
-            await statusMessage("❌ Error while processing image.");
+            hideScanningOverlay();
+            await statusMessage("❌ Error while processing image.", 3000);
             showSpinner(false);
         }
     };
 
     img.onerror = () => {
         console.error("❌ Fout bij laden van afbeelding.");
+        hideScanningOverlay();
         alert("❌ Fout bij laden van afbeelding.");
         showSpinner(false);
     };
@@ -436,7 +546,7 @@ function startPolling(taskId) {
                 showDownloadButtons();
                 stopDogFacts();
                 const success = await loadModel(`http://localhost:3000/api/proxyModel/${taskId}?format=glb`);
-                await statusMessage(success ? "✅ Model succesvol geladen!" : "❌ Kon model niet laden.");
+                // No status message needed here as dog facts are still showing
                 return;
                 
             }
@@ -445,7 +555,8 @@ function startPolling(taskId) {
                 console.error(`❌ Foutstatus ontvangen van backend: ${res.status}`);
                 clearInterval(interval);
                 showSpinner(false);
-                await statusMessage("❌ Modelgeneratie mislukt.");
+                stopDogFacts();
+                await statusMessage("❌ Modelgeneratie mislukt.", 3000);
             }
         } catch (e) {
             console.error("❌ Pollingfout:", e);
@@ -486,7 +597,7 @@ async function loadModel(url) {
 
                 // 🔍 Smooth camera-zoom naar het model
                 frameModel(model);
-showActionButtons();
+                showActionButtons();
                 resolve(true);
             }, (err) => {
                 console.error("❌ Parsefout GLTF:", err);
@@ -587,13 +698,8 @@ function frameModel(model) {
     animate();
 }
 
-showDownloadButtons();
+// REMOVED: showDownloadButtons(); - This should only be called when model loads
 window.downloadModel = downloadModel;
-function downloadModel(format = 'glb') {
-    const downloadUrl = `http://localhost:3000/api/proxyModel/${currentTaskId}?format=${format}`;
-    const filename = `model.${format}`;
-    downloadFile(downloadUrl, filename);
-}
 
 // Replace your existing downloadModel and downloadFile functions with these:
 async function downloadModel(format = 'glb') {

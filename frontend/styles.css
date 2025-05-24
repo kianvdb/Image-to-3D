@@ -302,6 +302,66 @@ button, .button, .btn {
     box-sizing: border-box;
 }
 
+/* Generation overlay in viewport (enhanced dogfact overlay) */
+#generationOverlay {
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9997;
+    transition: opacity 0.5s ease;
+    opacity: 0;
+    visibility: hidden;
+    padding: 15px;
+    box-sizing: border-box;
+    pointer-events: none;
+    max-width: 100%;
+    max-height: 100%;
+}
+
+#generationOverlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+#generationOverlay .generation-content {
+    background-color: rgba(0, 188, 212, 0.95);
+    color: white;
+    padding: 20px 24px;
+    border-radius: 12px;
+    max-width: 90%;
+    margin: 0 auto;
+    line-height: 1.6;
+    word-wrap: break-word;
+    box-sizing: border-box;
+    font-family: 'Sora', sans-serif;
+    border: 2px solid #00bcd4;
+    box-shadow: 0 8px 32px rgba(0, 188, 212, 0.4);
+}
+
+#generationOverlay .generation-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: white;
+}
+
+#generationOverlay .generation-subtitle {
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0.9;
+    color: white;
+}
+
 /* Action buttons below 3D viewer - hidden by default */
 .action-buttons {
     opacity: 0;
@@ -351,7 +411,7 @@ button, .button, .btn {
     z-index: 1000;
 }
 
-/* Download dropdown styling */
+/* Download dropdown styling - Now uses Nuclear JS, CSS just for basic styling */
 .download-dropdown {
     position: relative;
     flex: 1;
@@ -389,9 +449,6 @@ button, .button, .btn {
         0 0 30px rgba(0, 188, 212, 0.3),
         inset 0 0 15px rgba(0, 188, 212, 0.2);
 }
-
-/* Remove the old blinking glow animation */
-/* @keyframes downloadGlow - REMOVED */
 
 /* Keep the sweeping light effect */
 .action-buttons.downloads-ready .download-trigger::before {
@@ -449,82 +506,12 @@ button, .button, .btn {
     transform: rotate(90deg);
 }
 
-/* Dropdown options - HIDDEN by default */
+/* Original download options - HIDDEN (Nuclear JS creates new ones) */
 .download-options {
-    position: absolute;
-    bottom: 100%;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    margin-bottom: 8px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(10px);
-    transition: all 0.3s ease;
-    z-index: 100;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px rgba(0, 188, 212, 0.2);
+    display: none !important; /* Hidden - Nuclear JS creates floating versions */
 }
 
-/* Show options when dropdown is open */
-.download-dropdown.open .download-options {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.download-option {
-    width: 100%;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.8);
-    border: none;
-    padding: 0.8rem 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: 'Sora', sans-serif;
-    font-size: 0.9rem;
-    text-align: left;
-    font-weight: 500;
-}
-
-.download-option:hover {
-    background: rgba(0, 188, 212, 0.2);
-    color: #00bcd4;
-    transform: translateX(5px);
-}
-
-.download-option:first-child {
-    border-radius: 8px 8px 0 0;
-}
-
-.download-option:last-child {
-    border-radius: 0 0 8px 8px;
-}
-
-/* Entrance animation for download options */
-.download-dropdown.open .download-option {
-    animation: slideInOption 0.3s ease forwards;
-}
-
-.download-dropdown.open .download-option:nth-child(1) { animation-delay: 0.1s; }
-.download-dropdown.open .download-option:nth-child(2) { animation-delay: 0.15s; }
-.download-dropdown.open .download-option:nth-child(3) { animation-delay: 0.2s; }
-.download-dropdown.open .download-option:nth-child(4) { animation-delay: 0.25s; }
-
-@keyframes slideInOption {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-/* Right side - Controls sidebar */
+/* Right side - Controls sidebar - CORRECTED: Back to natural sticky behavior */
 .controls-sidebar {
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -532,8 +519,11 @@ button, .button, .btn {
     padding: 1.5rem;
     backdrop-filter: blur(10px);
     height: fit-content;
+    /* CORRECTED: Back to sticky positioning - moves naturally with viewport */
     position: sticky;
     top: 2rem;
+    /* Nuclear dropdowns are positioned outside this container, so overflow can be hidden */
+    overflow: hidden;
 }
 
 /* Control sections - more compact */
@@ -554,10 +544,29 @@ button, .button, .btn {
     display: block;
 }
 
+/* Hide labels for dropdown controls since they're now inside the dropdown */
+.dropdown-section .control-label {
+    display: none !important;
+}
+
 /* Image upload styling */
+.image-upload {
+    position: relative;
+}
+
 #imageInput {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    z-index: -1;
+}
+
+.upload-area {
     width: 100%;
-    padding: 1rem;
+    min-height: 80px;
     background: rgba(0, 188, 212, 0.1);
     border: 2px solid #00bcd4;
     border-radius: 12px;
@@ -567,18 +576,126 @@ button, .button, .btn {
     cursor: pointer;
     transition: all 0.3s ease;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    position: relative; /* Important for scanning overlay positioning */
+    overflow: hidden;
 }
 
-#imageInput:hover {
+.upload-area:hover {
     background: rgba(0, 188, 212, 0.15);
     border-color: #00e5ff;
     transform: translateY(-1px);
 }
 
-/* Dropdown controls styling */
+.upload-text {
+    font-size: 0.9rem;
+    color: #00bcd4;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.upload-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    border-radius: 10px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.upload-preview.visible {
+    opacity: 1;
+}
+
+.upload-preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    border-radius: 10px;
+}
+
+.upload-area:hover .upload-preview-overlay {
+    opacity: 1;
+}
+
+.upload-change-text {
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+    pointer-events: none;
+}
+
+/* Scanning overlay for upload area */
+.scanning-overlay {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 188, 212, 0.9) !important;
+    color: white !important;
+    font-family: 'Sora', sans-serif !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: column !important;
+    gap: 1rem !important;
+    border-radius: 10px !important;
+    z-index: 100 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    transition: all 0.3s ease !important;
+}
+
+.scanning-overlay.visible {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.scanning-animation {
+    width: 40px !important;
+    height: 40px !important;
+    border: 3px solid rgba(255, 255, 255, 0.3) !important;
+    border-top: 3px solid white !important;
+    border-radius: 50% !important;
+    animation: scan-spin 1s linear infinite !important;
+}
+
+@keyframes scan-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.scanning-text {
+    font-size: 1rem !important;
+    text-align: center !important;
+    color: white !important;
+}
+
+/* DROPDOWN CONTROLS - Optimized for Nuclear System */
 .dropdown-control {
     position: relative;
     width: 100%;
+    z-index: 1;
 }
 
 .dropdown-display {
@@ -587,13 +704,13 @@ button, .button, .btn {
     border-radius: 8px;
     padding: 0.7rem 1rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
     cursor: pointer;
     transition: all 0.3s ease;
     color: white;
     font-family: 'Sora', sans-serif;
     font-size: 0.9rem;
+    gap: 1rem;
 }
 
 .dropdown-display:hover {
@@ -601,8 +718,17 @@ button, .button, .btn {
     border-color: rgba(255, 255, 255, 0.4);
 }
 
+.dropdown-label {
+    color: white;
+    font-weight: 600;
+    min-width: fit-content;
+}
+
 .dropdown-value {
     flex: 1;
+    text-align: right;
+    color: rgba(255, 255, 255, 0.6);
+    margin-right: 0.5rem;
 }
 
 .dropdown-arrow {
@@ -615,57 +741,21 @@ button, .button, .btn {
     transform: rotate(90deg);
 }
 
+/* Original dropdown options - HIDDEN (Nuclear JS creates floating versions) */
 .dropdown-options {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    margin-top: 4px;
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(-10px);
-    transition: all 0.3s ease;
-    z-index: 100;
-    backdrop-filter: blur(10px);
-}
-
-.dropdown-control.open .dropdown-options {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0);
-}
-
-.dropdown-option {
-    padding: 0.7rem 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    color: rgba(255, 255, 255, 0.8);
-    font-family: 'Sora', sans-serif;
-    font-size: 0.9rem;
-}
-
-.dropdown-option:hover {
-    background: rgba(0, 188, 212, 0.2);
-    color: #00bcd4;
-}
-
-.dropdown-option.selected {
-    background: rgba(0, 188, 212, 0.15);
-    color: #00bcd4;
+    display: none !important; /* Hidden - Nuclear JS creates floating versions */
 }
 
 /* Disabled state for controls */
 .controls-sidebar.disabled .control-section:not(.image-upload) {
     opacity: 0.3;
-    pointer-events: none;
 }
 
-.controls-sidebar.disabled .control-section:not(.image-upload) * {
-    cursor: not-allowed !important;
+.controls-sidebar.disabled .control-section:not(.image-upload) .dropdown-display {
+    cursor: not-allowed;
 }
+
+/* Nuclear dropdowns can still work when parent is disabled */
 
 /* Polycount control - more compact */
 .polycount-control {
@@ -687,6 +777,7 @@ button, .button, .btn {
     background: rgba(255, 255, 255, 0.2);
     outline: none;
     -webkit-appearance: none;
+    appearance: none;
 }
 
 #polycountSlider::-webkit-slider-thumb {
@@ -780,72 +871,36 @@ button, .button, .btn {
     line-height: 12px;
 }
 
-/* Generate button - more compact */
-#generateBtn {
-    width: 100%;
-    padding: 1rem;
-    background: rgba(0, 188, 212, 0.2);
-    color: #00bcd4;
-    border: 2px solid #00bcd4;
-    border-radius: 12px;
-    font-family: 'Sora', sans-serif;
-    font-size: 1rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
+/* Progress section - reserved space so button doesn't move */
+.progress-section-container {
+    height: 80px;
     margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Always maintain the height regardless of content */
+    flex-shrink: 0;
 }
 
-#generateBtn:hover {
-    background: rgba(0, 188, 212, 0.3);
-    border-color: #00e5ff;
-    color: white;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 20px rgba(0, 188, 212, 0.3);
-}
-
-#generateBtn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-}
-
-/* Status message */
-.status-message {
-    text-align: center;
-    font-family: 'Inter', sans-serif;
-    font-size: 0.9rem;
-    color: rgba(255, 255, 255, 0.8);
-    margin: 0.8rem 0;
-    min-height: 1rem;
-    opacity: 0;
-    transform: translateY(10px);
-    transition: all 0.3s ease;
-}
-
-.status-message.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Progress section - hidden initially */
 .progress-section {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.8rem;
-    margin: 1rem 0;
+    width: 100%;
     opacity: 0;
     visibility: hidden;
     transform: translateY(20px);
     transition: all 0.4s ease;
+    /* Ensure it doesn't affect container height */
+    position: absolute;
 }
 
 .progress-section.visible {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+    position: relative;
 }
 
 #spinnerContainer {
@@ -896,6 +951,47 @@ button, .button, .btn {
     border-radius: 3px;
 }
 
+/* Generate button - aligned with action buttons */
+#generateBtn {
+    width: 100%;
+    padding: 1rem 2rem;
+    background: rgba(0, 188, 212, 0.2);
+    color: #00bcd4;
+    border: 2px solid #00bcd4;
+    border-radius: 12px;
+    font-family: 'Sora', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0;
+    height: auto;
+    min-height: 60px;
+}
+
+#generateBtn:hover {
+    background: rgba(0, 188, 212, 0.3);
+    border-color: #00e5ff;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(0, 188, 212, 0.3);
+}
+
+#generateBtn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* NUCLEAR DROPDOWN STYLING - For JS-created floating dropdowns */
+.nuclear-dropdown-options,
+.nuclear-download-options {
+    /* Base styles for nuclear dropdowns - most styles applied via JavaScript */
+    font-family: 'Sora', sans-serif;
+    box-sizing: border-box;
+}
+
 /* Responsive design */
 @media (max-width: 1024px) {
     .main-layout {
@@ -925,15 +1021,12 @@ button, .button, .btn {
     
     #generateBtn {
         grid-column: 1 / -1;
-        margin: 1rem 0 0.5rem 0;
+        margin: 0;
     }
     
-    .status-message {
+    .progress-section-container {
         grid-column: 1 / -1;
-    }
-    
-    .progress-section {
-        grid-column: 1 / -1;
+        height: 60px; /* Slightly smaller on mobile */
     }
     
     .container {
@@ -966,22 +1059,6 @@ button, .button, .btn {
     .action-buttons {
         flex-direction: column;
         gap: 0.8rem;
-    }
-    
-    .download-options {
-        position: fixed;
-        bottom: auto;
-        top: 100%;
-        left: 50%;
-        right: auto;
-        width: 200px;
-        transform: translateX(-50%);
-        margin-top: 8px;
-        margin-bottom: 0;
-    }
-    
-    .download-dropdown.open .download-options {
-        transform: translateX(-50%) translateY(0);
     }
     
     .polycount-inputs {
@@ -1018,8 +1095,7 @@ button, .button, .btn {
         font-size: 0.85rem;
     }
     
-    .dropdown-option {
-        padding: 0.6rem 0.8rem;
-        font-size: 0.85rem;
+    .progress-section-container {
+        height: 50px; /* Even smaller on very small screens */
     }
 }

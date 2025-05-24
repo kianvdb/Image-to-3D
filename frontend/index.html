@@ -71,6 +71,7 @@
                 <div id="viewer">
                     <div id="3dCanvas">
                         <div id="dogFactOverlay"></div>
+                        <div id="generationOverlay"></div>
                     </div>
                 </div>
 
@@ -82,13 +83,14 @@
                     <button class="action-btn">
                         <span>🚀 Export to Unity</span>
                     </button>
-                    <!-- Download dropdown -->
+                    <!-- Download dropdown - Nuclear JS will handle this -->
                     <div class="download-dropdown">
                         <button class="download-trigger">
                             <span>📥 Download</span>
                             <span class="dropdown-arrow">></span>
                         </button>
-                        <div class="download-options">
+                        <!-- Original download options - Hidden, Nuclear JS creates floating versions -->
+                        <div class="download-options" style="display: none;">
                             <button id="downloadGLB" class="download-option">GLB</button>
                             <button id="downloadUSDZ" class="download-option">USDZ</button>
                             <button id="downloadOBJ" class="download-option">OBJ</button>
@@ -96,7 +98,7 @@
                         </div>
                     </div>
                 </div>
-            </div> <!-- ✅ FIXED: Close viewer-section here -->
+            </div>
 
             <!-- Right side - Controls -->
             <div class="controls-sidebar disabled">
@@ -104,18 +106,33 @@
                 <!-- Image Upload -->
                 <div class="control-section image-upload">
                     <label class="control-label" for="imageInput">Upload Image</label>
-                    <input type="file" id="imageInput" accept="image/*"/>
+                    <div class="upload-area" onclick="document.getElementById('imageInput').click()">
+                        <input type="file" id="imageInput" accept="image/*"/>
+                        <div class="upload-text">Supported formats: .jpg .jpeg .png</div>
+                        <div class="upload-preview" id="uploadPreview">
+                            <div class="upload-preview-overlay">
+                                <div class="upload-change-text">Click to change image</div>
+                            </div>
+                        </div>
+                        <!-- SCANNING OVERLAY -->
+                        <div class="scanning-overlay" id="scanningOverlay">
+                            <div class="scanning-animation"></div>
+                            <div class="scanning-text">Scanning picture...</div>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Symmetry Controls -->
-                <div class="control-section">
+                <!-- Symmetry Controls - Nuclear JS will handle dropdown -->
+                <div class="control-section dropdown-section">
                     <label class="control-label">Symmetry</label>
                     <div class="dropdown-control" id="symmetryDropdown">
                         <div class="dropdown-display">
+                            <span class="dropdown-label">Symmetry</span>
                             <span class="dropdown-value">Auto</span>
                             <span class="dropdown-arrow">></span>
                         </div>
-                        <div class="dropdown-options">
+                        <!-- Original dropdown options - Hidden, Nuclear JS creates floating versions -->
+                        <div class="dropdown-options" style="display: none;">
                             <div class="dropdown-option" data-value="auto">Auto</div>
                             <div class="dropdown-option" data-value="on">On</div>
                         </div>
@@ -127,15 +144,17 @@
                     </div>
                 </div>
 
-                <!-- Topology Controls -->
-                <div class="control-section">
+                <!-- Topology Controls - Nuclear JS will handle dropdown -->
+                <div class="control-section dropdown-section">
                     <label class="control-label">Topology</label>
                     <div class="dropdown-control" id="topologyDropdown">
                         <div class="dropdown-display">
+                            <span class="dropdown-label">Topology</span>
                             <span class="dropdown-value">Triangles</span>
                             <span class="dropdown-arrow">></span>
                         </div>
-                        <div class="dropdown-options">
+                        <!-- Original dropdown options - Hidden, Nuclear JS creates floating versions -->
+                        <div class="dropdown-options" style="display: none;">
                             <div class="dropdown-option" data-value="triangle">Triangles</div>
                             <div class="dropdown-option" data-value="quad">Quads</div>
                         </div>
@@ -158,15 +177,17 @@
                     </div>
                 </div>
 
-                <!-- Texture Controls -->
-                <div class="control-section">
+                <!-- Texture Controls - Nuclear JS will handle dropdown -->
+                <div class="control-section dropdown-section">
                     <label class="control-label">Texture</label>
                     <div class="dropdown-control" id="textureDropdown">
                         <div class="dropdown-display">
+                            <span class="dropdown-label">Texture</span>
                             <span class="dropdown-value">Yes</span>
                             <span class="dropdown-arrow">></span>
                         </div>
-                        <div class="dropdown-options">
+                        <!-- Original dropdown options - Hidden, Nuclear JS creates floating versions -->
+                        <div class="dropdown-options" style="display: none;">
                             <div class="dropdown-option" data-value="true">Yes</div>
                             <div class="dropdown-option" data-value="false">No</div>
                         </div>
@@ -188,28 +209,25 @@
                     </div>
                 </div>
 
+                <!-- Progress Section - Reserved Space -->
+                <div class="progress-section-container">
+                    <div class="progress-section">
+                        <div id="spinnerContainer">
+                            <div class="spinner"></div>
+                            <span id="progressText">0%</span>
+                        </div>
+                        
+                        <!-- Progress Bar -->
+                        <progress id="progressBar" value="0" max="100"></progress>
+                    </div>
+                </div>
+
                 <!-- Generate Button -->
                 <button id="generateBtn">Generate Model</button>
-
-                <!-- Status Message -->
-                <div id="statusMsg" class="status-message"></div>
                 
-                <!-- Progress Section -->
-                <div class="progress-section">
-                    <div id="spinnerContainer">
-                        <div class="spinner"></div>
-                        <span id="progressText">0%</span>
-                    </div>
-                    
-                    <!-- Progress Bar -->
-                    <progress id="progressBar" value="0" max="100"></progress>
-                </div>
-                
-                <!-- ✅ REMOVED: No download buttons here anymore -->
-                
-            </div> <!-- ✅ Close controls-sidebar here -->
-        </div> <!-- ✅ Close main-layout here -->
-    </div> <!-- ✅ Close container here -->
+            </div>
+        </div>
+    </div>
 
     <!-- Footer -->
     <footer class="footer">
@@ -217,22 +235,13 @@
         <div><a href="#terms" style="color: rgba(255, 255, 255, 0.6); text-decoration: none;">Terms</a></div>
     </footer>
 
-    <!-- Mobile nav toggle function -->
-    <script>
-        function toggleMobileNav() {
-            const mobileNav = document.getElementById('mobileNav');
-            const hamburger = document.querySelector('.hamburger');
-            mobileNav.classList.toggle('active');
-            hamburger.classList.toggle('active');
-        }
-    </script>
-
     <!-- Load your custom modules before main.js -->
     <script src="src/dogfacts.js"></script>
     <script src="src/api.js"></script>
     <script src="src/objectDetection.js"></script>
+    <!-- Load the NUCLEAR FLOW.JS -->
     <script src="src/flow.js"></script>
-    <!-- Changed from type="module" to regular script -->
+    <!-- Load the compatible main.js -->
     <script src="src/main.js"></script>
 </body>
 </html>
